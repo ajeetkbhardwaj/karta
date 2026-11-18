@@ -21,4 +21,4 @@ bool remove_auth_key(const std::string& provider);
 // Empty when nothing is stored for the provider.
 std::string stored_api_key(const std::string& provider);
 
-}  // namespace karta
+} // namespace karta

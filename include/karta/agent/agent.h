@@ -8,8 +8,8 @@
 #include <utility>
 #include <vector>
 
-#include "karta/core/json.h"
 #include "karta/ai/provider.h"
+#include "karta/core/json.h"
 #include "karta/tools/tools.h"
 
 namespace karta {
@@ -19,12 +19,13 @@ struct AgentOptions {
   std::string system_prompt;
   std::vector<ToolDefinition> tools;
   std::string cwd;
-  int max_turns = 0;             // 0 = unlimited
-  long long compact_threshold = 0;  // estimated tokens; 0 disables auto-compaction
+  int max_turns = 0;               // 0 = unlimited
+  long long compact_threshold = 0; // estimated tokens; 0 disables auto-compaction
 
   // Hook functions for tool call interception
   std::function<void(const std::string& tool_name, const Json& arguments)> before_tool_call;
-  std::function<void(const std::string& tool_name, const Json& arguments, const Json& result)> after_tool_call;
+  std::function<void(const std::string& tool_name, const Json& arguments, const Json& result)>
+      after_tool_call;
 };
 
 struct AgentEvent {
@@ -33,7 +34,7 @@ struct AgentEvent {
 };
 
 class Agent {
- public:
+public:
   using EventSink = std::function<void(const AgentEvent&)>;
 
   Agent(AgentOptions options, EventSink sink);
@@ -57,7 +58,7 @@ class Agent {
   void queue_followup(std::string text);
   std::string model_label() const;
 
- private:
+private:
   void run_loop(std::vector<Json>& produced);
   void emit(const std::string& type, Json payload);
   std::vector<Json> drain_steering();
@@ -83,4 +84,4 @@ class Agent {
   int turn_count_ = 0;
 };
 
-}  // namespace karta
+} // namespace karta

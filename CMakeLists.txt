@@ -98,22 +98,22 @@ if(KARTA_BUILD_TUI)
     target_compile_definitions(karta PRIVATE KARTA_TUI)
     target_include_directories(karta PRIVATE ${NCURSES_INCLUDE_DIRS})
     target_link_libraries(karta PRIVATE ${NCURSES_LIBRARIES})
+    target_sources(karta PRIVATE
+      src/tui/screen.cpp
+      src/tui/app.cpp
+      src/tui/model-picker.cpp
+      src/tui/select-list.cpp
+      src/tui/text.cpp
+      src/tui/loader.cpp
+      src/tui/scroll-view.cpp
+      src/tui/editor.cpp
+      src/tui/markdown.cpp
+      src/tui/clipboard.cpp
+    )
+    message(STATUS "TUI enabled - `karta` opens the terminal UI when attached to a TTY")
   else()
     message(WARNING "ncurses/PDCurses not found. TUI disabled.")
   endif()
-  target_sources(karta PRIVATE
-    src/tui/screen.cpp
-    src/tui/app.cpp
-    src/tui/model-picker.cpp
-    src/tui/select-list.cpp
-    src/tui/text.cpp
-    src/tui/loader.cpp
-    src/tui/scroll-view.cpp
-    src/tui/editor.cpp
-    src/tui/markdown.cpp
-    src/tui/clipboard.cpp
-  )
-  message(STATUS "TUI enabled - `karta` opens the terminal UI when attached to a TTY")
 else()
   message(STATUS "TUI disabled - pass -DKARTA_BUILD_TUI=ON to build the TUI")
 endif()

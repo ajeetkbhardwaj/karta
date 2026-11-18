@@ -43,25 +43,25 @@ struct Parser {
     if (pos >= text.size()) return fail("unexpected end of input");
     const char c = text[pos];
     switch (c) {
-      case '{':
-        return parse_object(out);
-      case '[':
-        return parse_array(out);
-      case '"': {
-        std::string value;
-        if (!parse_string(value)) return false;
-        out = Json(std::move(value));
-        return true;
-      }
-      case 't':
-        return literal("true", Json(true), out);
-      case 'f':
-        return literal("false", Json(false), out);
-      case 'n':
-        return literal("null", Json(), out);
-      default:
-        if (c == '-' || (c >= '0' && c <= '9')) return parse_number(out);
-        return fail("unexpected character");
+    case '{':
+      return parse_object(out);
+    case '[':
+      return parse_array(out);
+    case '"': {
+      std::string value;
+      if (!parse_string(value)) return false;
+      out = Json(std::move(value));
+      return true;
+    }
+    case 't':
+      return literal("true", Json(true), out);
+    case 'f':
+      return literal("false", Json(false), out);
+    case 'n':
+      return literal("null", Json(), out);
+    default:
+      if (c == '-' || (c >= '0' && c <= '9')) return parse_number(out);
+      return fail("unexpected character");
     }
   }
 
@@ -76,15 +76,18 @@ struct Parser {
   bool parse_number(Json& out) {
     const std::size_t start = pos;
     if (pos < text.size() && text[pos] == '-') ++pos;
-    while (pos < text.size() && text[pos] >= '0' && text[pos] <= '9') ++pos;
+    while (pos < text.size() && text[pos] >= '0' && text[pos] <= '9')
+      ++pos;
     if (pos < text.size() && text[pos] == '.') {
       ++pos;
-      while (pos < text.size() && text[pos] >= '0' && text[pos] <= '9') ++pos;
+      while (pos < text.size() && text[pos] >= '0' && text[pos] <= '9')
+        ++pos;
     }
     if (pos < text.size() && (text[pos] == 'e' || text[pos] == 'E')) {
       ++pos;
       if (pos < text.size() && (text[pos] == '+' || text[pos] == '-')) ++pos;
-      while (pos < text.size() && text[pos] >= '0' && text[pos] <= '9') ++pos;
+      while (pos < text.size() && text[pos] >= '0' && text[pos] <= '9')
+        ++pos;
     }
     const std::string slice = text.substr(start, pos - start);
     char* end = nullptr;
@@ -145,38 +148,54 @@ struct Parser {
       if (pos >= text.size()) return fail("truncated escape");
       const char esc = text[pos++];
       switch (esc) {
-        case '"': out.push_back('"'); break;
-        case '\\': out.push_back('\\'); break;
-        case '/': out.push_back('/'); break;
-        case 'b': out.push_back('\b'); break;
-        case 'f': out.push_back('\f'); break;
-        case 'n': out.push_back('\n'); break;
-        case 'r': out.push_back('\r'); break;
-        case 't': out.push_back('\t'); break;
-        case 'u': {
-          unsigned int code = 0;
-          if (!parse_hex4(code)) return false;
-          if (code >= 0xD800 && code <= 0xDBFF && pos + 6 <= text.size() && text[pos] == '\\' &&
-              text[pos + 1] == 'u') {
-            pos += 2;
-            unsigned int low = 0;
-            if (!parse_hex4(low)) return false;
-            if (low >= 0xDC00 && low <= 0xDFFF) {
-              code = 0x10000 + ((code - 0xD800) << 10) + (low - 0xDC00);
-            }
+      case '"':
+        out.push_back('"');
+        break;
+      case '\\':
+        out.push_back('\\');
+        break;
+      case '/':
+        out.push_back('/');
+        break;
+      case 'b':
+        out.push_back('\b');
+        break;
+      case 'f':
+        out.push_back('\f');
+        break;
+      case 'n':
+        out.push_back('\n');
+        break;
+      case 'r':
+        out.push_back('\r');
+        break;
+      case 't':
+        out.push_back('\t');
+        break;
+      case 'u': {
+        unsigned int code = 0;
+        if (!parse_hex4(code)) return false;
+        if (code >= 0xD800 && code <= 0xDBFF && pos + 6 <= text.size() && text[pos] == '\\' &&
+            text[pos + 1] == 'u') {
+          pos += 2;
+          unsigned int low = 0;
+          if (!parse_hex4(low)) return false;
+          if (low >= 0xDC00 && low <= 0xDFFF) {
+            code = 0x10000 + ((code - 0xD800) << 10) + (low - 0xDC00);
           }
-          append_utf8(out, code);
-          break;
         }
-        default:
-          return fail("invalid escape");
+        append_utf8(out, code);
+        break;
+      }
+      default:
+        return fail("invalid escape");
       }
     }
     return fail("unterminated string");
   }
 
   bool parse_array(Json& out) {
-    ++pos;  // '['
+    ++pos; // '['
     out = Json::array();
     skip_ws();
     if (pos < text.size() && text[pos] == ']') {
@@ -196,7 +215,7 @@ struct Parser {
   }
 
   bool parse_object(Json& out) {
-    ++pos;  // '{'
+    ++pos; // '{'
     out = Json::object();
     skip_ws();
     if (pos < text.size() && text[pos] == '}') {
@@ -226,21 +245,35 @@ void dump_string(const std::string& value, std::string& out) {
   out.push_back('"');
   for (const char c : value) {
     switch (c) {
-      case '"': out += "\\\""; break;
-      case '\\': out += "\\\\"; break;
-      case '\b': out += "\\b"; break;
-      case '\f': out += "\\f"; break;
-      case '\n': out += "\\n"; break;
-      case '\r': out += "\\r"; break;
-      case '\t': out += "\\t"; break;
-      default:
-        if (static_cast<unsigned char>(c) < 0x20) {
-          char buffer[8];
-          std::snprintf(buffer, sizeof(buffer), "\\u%04x", static_cast<unsigned char>(c));
-          out += buffer;
-        } else {
-          out.push_back(c);
-        }
+    case '"':
+      out += "\\\"";
+      break;
+    case '\\':
+      out += "\\\\";
+      break;
+    case '\b':
+      out += "\\b";
+      break;
+    case '\f':
+      out += "\\f";
+      break;
+    case '\n':
+      out += "\\n";
+      break;
+    case '\r':
+      out += "\\r";
+      break;
+    case '\t':
+      out += "\\t";
+      break;
+    default:
+      if (static_cast<unsigned char>(c) < 0x20) {
+        char buffer[8];
+        std::snprintf(buffer, sizeof(buffer), "\\u%04x", static_cast<unsigned char>(c));
+        out += buffer;
+      } else {
+        out.push_back(c);
+      }
     }
   }
   out.push_back('"');
@@ -248,58 +281,58 @@ void dump_string(const std::string& value, std::string& out) {
 
 void dump_value(const Json& value, std::string& out) {
   switch (value.type()) {
-    case Json::Type::Null:
+  case Json::Type::Null:
+    out += "null";
+    break;
+  case Json::Type::Bool:
+    out += value.as_bool() ? "true" : "false";
+    break;
+  case Json::Type::Number: {
+    const double number = value.as_double();
+    if (std::isfinite(number) && std::floor(number) == number && std::fabs(number) < 1e15) {
+      char buffer[32];
+      std::snprintf(buffer, sizeof(buffer), "%lld", static_cast<long long>(number));
+      out += buffer;
+    } else if (!std::isfinite(number)) {
       out += "null";
-      break;
-    case Json::Type::Bool:
-      out += value.as_bool() ? "true" : "false";
-      break;
-    case Json::Type::Number: {
-      const double number = value.as_double();
-      if (std::isfinite(number) && std::floor(number) == number && std::fabs(number) < 1e15) {
-        char buffer[32];
-        std::snprintf(buffer, sizeof(buffer), "%lld", static_cast<long long>(number));
-        out += buffer;
-      } else if (!std::isfinite(number)) {
-        out += "null";
-      } else {
-        char buffer[40];
-        std::snprintf(buffer, sizeof(buffer), "%.17g", number);
-        out += buffer;
-      }
-      break;
+    } else {
+      char buffer[40];
+      std::snprintf(buffer, sizeof(buffer), "%.17g", number);
+      out += buffer;
     }
-    case Json::Type::String:
-      dump_string(value.as_string(), out);
-      break;
-    case Json::Type::Array: {
-      out.push_back('[');
-      bool first = true;
-      for (const Json& item : value.items()) {
-        if (!first) out.push_back(',');
-        first = false;
-        dump_value(item, out);
-      }
-      out.push_back(']');
-      break;
+    break;
+  }
+  case Json::Type::String:
+    dump_string(value.as_string(), out);
+    break;
+  case Json::Type::Array: {
+    out.push_back('[');
+    bool first = true;
+    for (const Json& item : value.items()) {
+      if (!first) out.push_back(',');
+      first = false;
+      dump_value(item, out);
     }
-    case Json::Type::Object: {
-      out.push_back('{');
-      bool first = true;
-      for (const auto& [key, item] : value.fields()) {
-        if (!first) out.push_back(',');
-        first = false;
-        dump_string(key, out);
-        out.push_back(':');
-        dump_value(item, out);
-      }
-      out.push_back('}');
-      break;
+    out.push_back(']');
+    break;
+  }
+  case Json::Type::Object: {
+    out.push_back('{');
+    bool first = true;
+    for (const auto& [key, item] : value.fields()) {
+      if (!first) out.push_back(',');
+      first = false;
+      dump_string(key, out);
+      out.push_back(':');
+      dump_value(item, out);
     }
+    out.push_back('}');
+    break;
+  }
   }
 }
 
-}  // namespace
+} // namespace
 
 Json::Json() = default;
 Json::Json(std::nullptr_t) {}
@@ -331,7 +364,9 @@ long long Json::as_int(long long fallback) const {
   return type_ == Type::Number ? static_cast<long long>(number_) : fallback;
 }
 
-const std::string& Json::as_string() const { return type_ == Type::String ? string_ : null_value().string_; }
+const std::string& Json::as_string() const {
+  return type_ == Type::String ? string_ : null_value().string_;
+}
 
 bool Json::contains(const std::string& key) const {
   return type_ == Type::Object && object_.find(key) != object_.end();
@@ -411,4 +446,4 @@ std::string json_escape(const std::string& value) {
   return out;
 }
 
-}  // namespace karta
+} // namespace karta

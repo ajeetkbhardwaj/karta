@@ -6,9 +6,9 @@
 #include <fstream>
 #include <sstream>
 
+#include "karta/ai/provider.h"
 #include "karta/core/id.h"
 #include "karta/core/platform.h"
-#include "karta/ai/provider.h"
 
 namespace fs = std::filesystem;
 
@@ -22,7 +22,8 @@ std::string sanitize(const std::string& value) {
                       c == '-' || c == '_';
     out.push_back(safe ? c : '-');
   }
-  while (!out.empty() && out.front() == '-') out.erase(out.begin());
+  while (!out.empty() && out.front() == '-')
+    out.erase(out.begin());
   if (out.empty()) out = "root";
   if (out.size() > 120) out.resize(120);
   return out;
@@ -71,23 +72,24 @@ std::string last_entry_id(const std::vector<Json>& entries) {
   return entries.back()["id"].as_string();
 }
 
-}  // namespace
+} // namespace
 
 std::string Session::default_directory() {
   return (fs::path(home_directory()) / ".karta" / "sessions").string();
 }
 
 std::string Session::directory_for_cwd(const std::string& cwd, const std::string& override_dir) {
-  const fs::path base = override_dir.empty() ? fs::path(default_directory()) : fs::path(override_dir);
+  const fs::path base =
+      override_dir.empty() ? fs::path(default_directory()) : fs::path(override_dir);
   std::error_code error;
   const fs::path absolute = fs::absolute(cwd, error);
   return (base / sanitize(absolute.string())).string();
 }
 
 std::unique_ptr<Session> Session::create(const std::string& cwd, const std::string& directory,
-                                          const std::string& name, std::string* error,
-                                          const std::string& explicit_id,
-                                          const std::string& parent_session) {
+                                         const std::string& name, std::string* error,
+                                         const std::string& explicit_id,
+                                         const std::string& parent_session) {
   std::error_code fs_error;
   fs::create_directories(directory, fs_error);
   if (fs_error) {
@@ -96,14 +98,16 @@ std::unique_ptr<Session> Session::create(const std::string& cwd, const std::stri
   }
 
   // Secure directory permissions: 0700
-  fs::permissions(directory, fs::perms::owner_read | fs::perms::owner_write | fs::perms::owner_exec, fs_error);
+  fs::permissions(directory, fs::perms::owner_read | fs::perms::owner_write | fs::perms::owner_exec,
+                  fs_error);
 
   auto session = std::unique_ptr<Session>(new Session());
   session->record_.id = explicit_id.empty() ? karta::Id::session_id() : explicit_id;
   session->record_.cwd = cwd;
   session->record_.name = name;
   session->record_.path =
-      (fs::path(directory) / (timestamp_for_filename() + "_" + session->record_.id + ".jsonl")).string();
+      (fs::path(directory) / (timestamp_for_filename() + "_" + session->record_.id + ".jsonl"))
+          .string();
 
   const Json header = session_header(session->record_.id, cwd, name);
   if (!write_header(session->record_.path, header, parent_session, error)) return nullptr;
@@ -132,7 +136,8 @@ std::unique_ptr<Session> Session::load(const std::string& path, std::string* err
     const Json entry = Json::parse(line, &parse_error);
     if (!parse_error.empty()) continue;
 
-    if ((entry["type"].as_string() == "session" || entry["type"].as_string() == "header") && !header_seen) {
+    if ((entry["type"].as_string() == "session" || entry["type"].as_string() == "header") &&
+        !header_seen) {
       header_seen = true;
       session->record_.id = entry["id"].as_string();
       session->record_.cwd = entry["cwd"].as_string();
@@ -152,9 +157,9 @@ std::unique_ptr<Session> Session::load(const std::string& path, std::string* err
       session->record_.compacted = true;
       session->record_.summary = entry["summary"].as_string();
       session->record_.messages.clear();
-      session->record_.messages.push_back(make_user_message(
-          "[Context summary: the earlier conversation was compacted]\n\n" +
-          session->record_.summary));
+      session->record_.messages.push_back(
+          make_user_message("[Context summary: the earlier conversation was compacted]\n\n" +
+                            session->record_.summary));
     } else if (type == "model_change") {
       session->record_.provider = entry["provider"].as_string();
       session->record_.model = entry["modelId"].as_string();
@@ -178,7 +183,8 @@ std::string Session::find_by_id(const std::string& id, const std::string& direct
   for (fs::directory_iterator it(directory, error), end; !error && it != end; it.increment(error)) {
     if (!it->is_regular_file(error)) continue;
     const std::string name = it->path().filename().string();
-    if (name.size() > 6 && name.substr(name.size() - 6) == ".jsonl" && name.find(id) != std::string::npos) {
+    if (name.size() > 6 && name.substr(name.size() - 6) == ".jsonl" &&
+        name.find(id) != std::string::npos) {
       return it->path().string();
     }
   }
@@ -208,14 +214,14 @@ std::string Session::find_latest(const std::string& cwd, const std::string& dire
   return best.empty() ? "" : best.string();
 }
 
-void Session::set_parent(const Json& entry) {
-  last_entry_id_ = entry["id"].as_string();
-}
+void Session::set_parent(const Json& entry) { last_entry_id_ = entry["id"].as_string(); }
 
 void Session::append_entry(Json entry) {
   entry.set("id", karta::Id::uuidv7());
-  if (!last_entry_id_.empty()) entry.set("parentId", last_entry_id_);
-  else entry.set("parentId", Json());
+  if (!last_entry_id_.empty())
+    entry.set("parentId", last_entry_id_);
+  else
+    entry.set("parentId", Json());
   entry.set("timestamp", iso8601_now());
 
   // Atomic write: write to temp file then rename
@@ -295,4 +301,4 @@ void Session::append_compaction(const std::string& summary, long long tokens_bef
   record_.summary = summary;
 }
 
-}  // namespace karta
+} // namespace karta

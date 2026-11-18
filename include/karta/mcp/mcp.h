@@ -1,5 +1,6 @@
 // Karta — MCP (Model Context Protocol) client implementation.
-// Full JSON-RPC 2.0 client with stdio/HTTP transports, tools, resources, prompts, roots, logging, sampling.
+// Full JSON-RPC 2.0 client with stdio/HTTP transports, tools, resources, prompts, roots, logging,
+// sampling.
 
 #pragma once
 
@@ -136,10 +137,10 @@ struct Tool {
   std::string name;
   std::optional<std::string> title;
   std::optional<std::string> description;
-  Json inputSchema;  // JSON Schema object
+  Json inputSchema; // JSON Schema object
   std::optional<Json> outputSchema;
   std::optional<ToolAnnotations> annotations;
-  std::optional<std::string> execution;  // "forbidden" | "optional" | "required"
+  std::optional<std::string> execution; // "forbidden" | "optional" | "required"
 };
 
 struct ListToolsResult {
@@ -153,7 +154,7 @@ struct CallToolParams {
 };
 
 struct CallToolResult {
-  std::vector<Json> content;  // TextContent | ImageContent | ResourceLink | Resource
+  std::vector<Json> content; // TextContent | ImageContent | ResourceLink | Resource
   std::optional<bool> isError;
   std::optional<Json> structuredContent;
   std::optional<Json> _meta;
@@ -174,7 +175,7 @@ struct TextResourceContents {
 struct BlobResourceContents {
   std::string uri;
   std::optional<std::string> mimeType;
-  std::string blob;  // base64
+  std::string blob; // base64
   std::optional<ContentAnnotations> annotations;
 };
 
@@ -221,7 +222,7 @@ struct Prompt {
   std::string name;
   std::optional<std::string> title;
   std::optional<std::string> description;
-  std::optional<Json> arguments;  // JSON Schema for arguments
+  std::optional<Json> arguments; // JSON Schema for arguments
 };
 
 struct ListPromptsResult {
@@ -240,8 +241,8 @@ struct GetPromptParams {
 };
 
 struct PromptMessage {
-  std::string role;  // "user" | "assistant"
-  Json content;      // TextContent | ImageContent | ResourceLink
+  std::string role; // "user" | "assistant"
+  Json content;     // TextContent | ImageContent | ResourceLink
 };
 
 struct GetPromptResult {
@@ -250,13 +251,14 @@ struct GetPromptResult {
 };
 
 struct LoggingParams {
-  std::string level;  // "debug" | "info" | "notice" | "warning" | "error" | "critical" | "alert" | "emergency"
+  std::string level; // "debug" | "info" | "notice" | "warning" | "error" | "critical" | "alert" |
+                     // "emergency"
   std::optional<std::string> logger;
   Json data;
 };
 
 struct SamplingParams {
-  Json messages;  // Array of message objects
+  Json messages; // Array of message objects
   std::optional<Json> systemPrompt;
   std::optional<Json> toolDeclarations;
   std::optional<int> maxTokens;
@@ -265,7 +267,7 @@ struct SamplingParams {
 };
 
 struct SamplingResult {
-  std::string role;  // "user" | "assistant"
+  std::string role; // "user" | "assistant"
   Json content;     // TextContent | ImageContent
   std::optional<std::string> stopReason;
 };
@@ -275,7 +277,7 @@ struct SamplingResult {
 // ============================================================================
 
 class McpTransport {
- public:
+public:
   using MessageCallback = std::function<void(const JsonRpcMessage&)>;
   using ErrorCallback = std::function<void(const std::exception&)>;
   using CloseCallback = std::function<void()>;
@@ -312,7 +314,7 @@ struct McpRequestOptions {
 };
 
 class McpClient {
- public:
+public:
   enum class State { Idle, Connecting, Connected, Closed };
 
   explicit McpClient(McpClientOptions options);
@@ -348,15 +350,14 @@ class McpClient {
   void ping(const McpRequestOptions& options = {});
 
   // Event handlers
-  void onNotification(const std::string& method,
-                      std::function<void(const Json&)> handler);
+  void onNotification(const std::string& method, std::function<void(const Json&)> handler);
   void onError(std::function<void(const std::exception&)> handler);
   void onClose(std::function<void()> handler);
 
   // Cleanup
   void close();
 
- private:
+private:
   McpClientOptions options_;
   State state_ = State::Idle;
   std::unique_ptr<McpTransport> transport_;
@@ -364,8 +365,9 @@ class McpClient {
   std::string protocolVersion_;
   std::atomic<int64_t> nextRequestId_{1};
   std::mutex pendingMutex_;
-  std::map<int64_t, std::pair<std::function<void(const Json&)>,
-                              std::function<void(const std::exception&)>>> pendingRequests_;
+  std::map<int64_t,
+           std::pair<std::function<void(const Json&)>, std::function<void(const std::exception&)>>>
+      pendingRequests_;
   std::map<std::string, std::function<void(const Json&)>> notificationHandlers_;
   std::function<void(const std::exception&)> errorHandler_;
   std::function<void()> closeHandler_;
@@ -390,7 +392,7 @@ struct StdioTransportOptions {
   std::string cwd;
   std::map<std::string, std::string> env;
   bool inheritEnv = true;
-  std::string stderrMode = "pipe";  // "pipe" | "inherit"
+  std::string stderrMode = "pipe"; // "pipe" | "inherit"
   std::function<void(const std::string&)> onStderr;
   size_t maxMessageBytes = 10 * 1024 * 1024;
   size_t maxStderrBytes = 10 * 1024 * 1024;
@@ -400,7 +402,7 @@ struct StdioTransportOptions {
 struct HttpTransportOptions {
   std::string url;
   std::map<std::string, std::string> headers;
-  std::optional<std::function<std::string()>> authProvider;  // Returns bearer token
+  std::optional<std::function<std::string()>> authProvider; // Returns bearer token
   std::optional<std::string> protocolVersion;
   size_t maxMessageBytes = 10 * 1024 * 1024;
 };
@@ -419,7 +421,7 @@ struct OAuthSettings {
   std::optional<std::string> callbackUrl;
   std::optional<std::string> scope;
   std::optional<std::string> clientName;
-  std::optional<std::string> clientRegistration;  // "auto" | "dcr" | "cimd"
+  std::optional<std::string> clientRegistration; // "auto" | "dcr" | "cimd"
   std::optional<std::string> authServerMetadataUrl;
 };
 
@@ -429,17 +431,16 @@ struct OAuthChallenge {
 };
 
 class McpAuthProvider {
- public:
+public:
   virtual ~McpAuthProvider() = default;
   virtual std::string getToken() = 0;
   virtual void onChallenge(const OAuthChallenge& challenge) = 0;
   virtual void settled() = 0;
 };
 
-std::unique_ptr<McpAuthProvider> createMcpAuthProvider(
-    const std::string& serverUrl,
-    const std::string& credentialStorePath,
-    const OAuthSettings& settings,
-    std::function<void(const OAuthChallenge&)> onChallenge);
+std::unique_ptr<McpAuthProvider>
+createMcpAuthProvider(const std::string& serverUrl, const std::string& credentialStorePath,
+                      const OAuthSettings& settings,
+                      std::function<void(const OAuthChallenge&)> onChallenge);
 
-}  // namespace karta::mcp
+} // namespace karta::mcp

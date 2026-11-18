@@ -9,17 +9,17 @@
 namespace karta::tui {
 
 class Loader : public Text {
- public:
+public:
   Loader(const std::string& message = "Loading...");
   void start();
   void stop();
   void set_message(const std::string& message);
   std::vector<std::string> render(size_t width) const;
 
- private:
+private:
   std::string message_;
   size_t frame_ = 0;
   bool running_ = false;
 };
 
-}  // namespace karta::tui
+} // namespace karta::tui

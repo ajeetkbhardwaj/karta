@@ -11,10 +11,10 @@ class Session;
 
 struct TuiAppOptions {
   AgentOptions agent;
-  Session* session = nullptr;  // optional, non-owning
+  Session* session = nullptr; // optional, non-owning
 };
 
 // Runs the terminal UI until the user exits. Returns a process exit code.
 int run_tui_app(TuiAppOptions options);
 
-}  // namespace karta
+} // namespace karta

@@ -9,7 +9,7 @@
 namespace karta::tui {
 
 class Text {
- public:
+public:
   Text(const std::string& text = "", Style style = Style::Normal);
   void set_text(const std::string& text);
   const std::string& text() const { return text_; }
@@ -17,9 +17,9 @@ class Text {
   std::vector<std::string> render(size_t width) const;
   void invalidate() {}
 
- private:
+private:
   std::string text_;
   Style style_;
 };
 
-}  // namespace karta::tui
+} // namespace karta::tui

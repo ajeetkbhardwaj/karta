@@ -15,7 +15,7 @@ struct ToolContext {
 
 struct ToolOutcome {
   std::string text;
-  Json structured_content;  // For structured output (e.g., JSON from MCP tools)
+  Json structured_content; // For structured output (e.g., JSON from MCP tools)
   bool is_error = false;
   bool terminate = false;
 };
@@ -23,7 +23,7 @@ struct ToolOutcome {
 struct ToolDefinition {
   std::string name;
   std::string description;
-  Json parameters;  // JSON Schema object
+  Json parameters; // JSON Schema object
   std::function<ToolOutcome(const Json&, ToolContext&)> execute;
 };
 
@@ -37,4 +37,4 @@ Json tool_declaration(const ToolDefinition& tool);
 constexpr std::size_t kMaxLines = 2000;
 constexpr std::size_t kMaxBytes = 50 * 1024;
 
-}  // namespace karta
+} // namespace karta

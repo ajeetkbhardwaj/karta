@@ -15,4 +15,4 @@ std::string build_system_prompt(const std::vector<ToolDefinition>& tools, const 
 // Project instruction files (AGENTS.md, AGENTS.override.md, CLAUDE.md) from cwd upwards.
 std::string load_project_instructions(const std::string& cwd);
 
-}  // namespace karta
+} // namespace karta

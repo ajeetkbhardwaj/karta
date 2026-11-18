@@ -15,9 +15,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "karta/ai/provider.h"
 #include "karta/core/auth.h"
 #include "karta/core/json.h"
-#include "karta/ai/provider.h"
 #include "karta/session/session.h"
 #include "karta/tui/app.h"
 #include "karta/tui/screen.h"
@@ -45,7 +45,7 @@ struct SelectListSelection {
 };
 
 class ModelPicker {
- public:
+public:
   explicit ModelPicker(AgentOptions* agent, Session* session);
 
   // True when the picker may fetch (non-local provider, credentials present).
@@ -66,7 +66,7 @@ class ModelPicker {
   // Current job state.
   JobState job_state() const { return job_state_; }
 
- private:
+private:
   void fetch_models_(const ModelSpec& spec);
 
   void apply_selected_model_();
@@ -85,5 +85,5 @@ class ModelPicker {
   std::vector<std::string> job_models_;
 };
 
-}  // namespace tui
-}  // namespace karta
+} // namespace tui
+} // namespace karta

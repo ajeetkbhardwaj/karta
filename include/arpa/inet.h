@@ -11,7 +11,7 @@
 #define inet_pton(family, address, buffer) InetPtonA((family), (address), (buffer))
 #endif
 #ifndef inet_ntop
-#define inet_ntop(family, address, buffer, length) \
+#define inet_ntop(family, address, buffer, length)                                                 \
   InetNtopA((family), const_cast<void*>(static_cast<const void*>(address)), (buffer), (length))
 #endif
 #else

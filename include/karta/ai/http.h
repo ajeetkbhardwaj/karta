@@ -34,4 +34,4 @@ HttpResponse http_get(const std::string& url, const std::vector<std::string>& he
                       const std::atomic<bool>* cancel = nullptr,
                       const RedirectCallback& on_redirect = nullptr);
 
-}  // namespace karta
+} // namespace karta

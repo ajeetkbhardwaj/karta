@@ -16,9 +16,9 @@
 
 #include <curses.h>
 
+#include "karta/ai/provider.h"
 #include "karta/core/auth.h"
 #include "karta/core/json.h"
-#include "karta/ai/provider.h"
 #include "karta/session/session.h"
 #include "karta/tui/model-picker.h"
 #include "karta/tui/screen.h"
@@ -37,7 +37,8 @@ std::string trim(const std::string& value) {
 }
 
 std::string lower(std::string value) {
-  for (char& c : value) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  for (char& c : value)
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   return value;
 }
 
@@ -69,11 +70,12 @@ std::string join(const std::vector<std::string>& items, const std::string& separ
   return out;
 }
 
-}  // namespace
+} // namespace
 
 class TuiApp {
- public:
-  explicit TuiApp(TuiAppOptions options) : options_(std::move(options)), model_picker_(nullptr, nullptr) {}
+public:
+  explicit TuiApp(TuiAppOptions options)
+      : options_(std::move(options)), model_picker_(nullptr, nullptr) {}
 
   ~TuiApp() {
     if (agent_) agent_->interrupt();
@@ -88,7 +90,7 @@ class TuiApp {
 
   int run();
 
- private:
+private:
   enum class Phase { Chat, LoginProvider, LoginKey, ModelPick };
   enum class JobKind { None, FetchModels };
 
@@ -145,20 +147,26 @@ class TuiApp {
 
   std::string pending_provider_;
   std::vector<std::string> models_; // legacy/current-provider list
-  std::vector<std::pair<std::string,std::string>> all_models_; // (provider, model) from all connected providers
+  std::vector<std::pair<std::string, std::string>>
+      all_models_; // (provider, model) from all connected providers
   bool models_loading_all_ = false;
   std::atomic<bool> models_all_done_{false};
   std::thread models_all_thread_;
   std::mutex models_all_mutex_;
   std::string models_all_error_;
-  std::vector<std::pair<std::string,std::string>> models_all_result_;
+  std::vector<std::pair<std::string, std::string>> models_all_result_;
   bool consume_models_all();
   void begin_all_model_pick();
 
   // Inline completion (slash commands / model search)
   bool completion_active_ = false;
-  enum class CompletionKind { None, Command, Model, Provider } completion_kind_ = CompletionKind::None;
-  std::vector<std::pair<std::string,std::string>> completion_all_; // value,label/desc
+  enum class CompletionKind {
+    None,
+    Command,
+    Model,
+    Provider
+  } completion_kind_ = CompletionKind::None;
+  std::vector<std::pair<std::string, std::string>> completion_all_; // value,label/desc
   std::vector<int> completion_filtered_;
   int completion_index_ = 0;
   std::string completion_prefix_;
@@ -211,7 +219,9 @@ int TuiApp::run() {
     if (key != tui::Key::None) {
       const std::string before = ui_.input();
       handle_key(key, ch);
-      if (ui_.input() != before || key == tui::Key::Backspace || key == tui::Key::Delete || key == tui::Key::Char) update_completion();
+      if (ui_.input() != before || key == tui::Key::Backspace || key == tui::Key::Delete ||
+          key == tui::Key::Char)
+        update_completion();
       changed = true;
     }
 
@@ -231,9 +241,7 @@ int TuiApp::run() {
   return 0;
 }
 
-void TuiApp::say(const std::string& text, tui::Style style) {
-  ui_.append_text(text, style);
-}
+void TuiApp::say(const std::string& text, tui::Style style) { ui_.append_text(text, style); }
 
 void TuiApp::sync_header() {
   tui::SessionInfo info;
@@ -256,9 +264,15 @@ void TuiApp::reset_prompt() {
 }
 
 void TuiApp::handle_key(tui::Key key, int /*ch*/) {
-  if (key == tui::Key::CtrlL) { ui_.draw(); return; }
+  if (key == tui::Key::CtrlL) {
+    ui_.draw();
+    return;
+  }
   if (key == tui::Key::CtrlD) {
-    if (ui_.input().empty() && !busy_ && !job_running_ && phase_ == Phase::Chat) { running_ = false; return; }
+    if (ui_.input().empty() && !busy_ && !job_running_ && phase_ == Phase::Chat) {
+      running_ = false;
+      return;
+    }
   }
 
   if (completion_active_) {
@@ -267,12 +281,15 @@ void TuiApp::handle_key(tui::Key key, int /*ch*/) {
       return;
     }
     if (key == tui::Key::Up) {
-      if (!completion_filtered_.empty()) completion_index_ = (completion_index_ <= 0) ? (int)completion_filtered_.size()-1 : completion_index_-1;
+      if (!completion_filtered_.empty())
+        completion_index_ =
+            (completion_index_ <= 0) ? (int)completion_filtered_.size() - 1 : completion_index_ - 1;
       render_completion();
       return;
     }
     if (key == tui::Key::Down || key == tui::Key::Tab) {
-      if (!completion_filtered_.empty()) completion_index_ = (completion_index_ + 1) % (int)completion_filtered_.size();
+      if (!completion_filtered_.empty())
+        completion_index_ = (completion_index_ + 1) % (int)completion_filtered_.size();
       render_completion();
       return;
     }
@@ -311,44 +328,44 @@ void TuiApp::handle_key(tui::Key key, int /*ch*/) {
   }
 
   switch (key) {
-    case tui::Key::Enter: {
-      const std::string line = ui_.input();
-      if (ui_.multiline()) {
-        const std::string text = ui_.input_text();
-        if (!text.empty()) {
-          history_.push_back(text);
-          if (history_.size() > 200) history_.erase(history_.begin());
-        }
-        history_pos_ = -1;
-        history_draft_.clear();
-        ui_.set_input_text("");
-        ui_.set_multiline(false);
-        clear_completion();
-        handle_submit(text);
-      } else {
-        ui_.set_input("");
-        clear_completion();
-        handle_submit(line);
+  case tui::Key::Enter: {
+    const std::string line = ui_.input();
+    if (ui_.multiline()) {
+      const std::string text = ui_.input_text();
+      if (!text.empty()) {
+        history_.push_back(text);
+        if (history_.size() > 200) history_.erase(history_.begin());
       }
-      return;
+      history_pos_ = -1;
+      history_draft_.clear();
+      ui_.set_input_text("");
+      ui_.set_multiline(false);
+      clear_completion();
+      handle_submit(text);
+    } else {
+      ui_.set_input("");
+      clear_completion();
+      handle_submit(line);
     }
-    case tui::Key::CtrlC:
-    case tui::Key::Escape:
-      if (busy_ && agent_) {
-        agent_->interrupt();
-        ui_.set_status("cancelling…", true);
-      } else if (job_running_ || models_loading_all_) {
-        job_cancel_ = true;
-        ui_.set_status("cancelling…", true);
-      } else if (phase_ != Phase::Chat) {
-        reset_prompt();
-        say("cancelled", tui::Style::Dim);
-      } else if (key == tui::Key::CtrlC) {
-        running_ = false;
-      }
-      return;
-    default:
-      return;
+    return;
+  }
+  case tui::Key::CtrlC:
+  case tui::Key::Escape:
+    if (busy_ && agent_) {
+      agent_->interrupt();
+      ui_.set_status("cancelling…", true);
+    } else if (job_running_ || models_loading_all_) {
+      job_cancel_ = true;
+      ui_.set_status("cancelling…", true);
+    } else if (phase_ != Phase::Chat) {
+      reset_prompt();
+      say("cancelled", tui::Style::Dim);
+    } else if (key == tui::Key::CtrlC) {
+      running_ = false;
+    }
+    return;
+  default:
+    return;
   }
 }
 
@@ -374,7 +391,10 @@ void TuiApp::handle_submit(const std::string& line) {
     finish_model_pick(line);
     return;
   }
-  if (job_running_ && !models_loading_all_) { say("still fetching — Esc cancels", tui::Style::Dim); return; }
+  if (job_running_ && !models_loading_all_) {
+    say("still fetching — Esc cancels", tui::Style::Dim);
+    return;
+  }
   start_prompt(line);
 }
 
@@ -399,14 +419,16 @@ void TuiApp::handle_command(const std::string& line) {
     say("  /logout [provider]  forget the saved key for a provider", tui::Style::Normal);
     say("  /model [id]         list and pick a model (or set one directly)", tui::Style::Normal);
     say("  /provider [name]    show or switch the provider", tui::Style::Normal);
-    say("  /thinking [0-3|off|low|medium|high]  set thinking level (default 1)", tui::Style::Normal);
+    say("  /thinking [0-3|off|low|medium|high]  set thinking level (default 1)",
+        tui::Style::Normal);
     say("  /theme [name]       set color theme (default, dark, light, mono)", tui::Style::Normal);
     say("  /multiline [on|off] toggle multi-line input mode", tui::Style::Normal);
     say("  /session            show the session file", tui::Style::Normal);
     say("  /clear              clear the transcript", tui::Style::Normal);
     say("  /undo               undo last edit (multi-line)", tui::Style::Normal);
     say("  /redo               redo last edit (multi-line)", tui::Style::Normal);
-    say("  /exit               quit (Esc cancels a turn, Ctrl+D at empty prompt)", tui::Style::Normal);
+    say("  /exit               quit (Esc cancels a turn, Ctrl+D at empty prompt)",
+        tui::Style::Normal);
     say("  Ctrl+L              refresh screen", tui::Style::Normal);
     say("  Ctrl+Z              undo (multi-line)", tui::Style::Normal);
     say("  Ctrl+Y              redo (multi-line)", tui::Style::Normal);
@@ -454,12 +476,19 @@ void TuiApp::handle_command(const std::string& line) {
     // /model <provider/model or id> sets directly (back-compat). /model <number> uses current list.
     // Bare /model opens unified search across all logged-in providers.
     if (!argument.empty()) {
-      if (all_digits(argument) && !models_.empty()) { finish_model_pick(argument); return; }
+      if (all_digits(argument) && !models_.empty()) {
+        finish_model_pick(argument);
+        return;
+      }
       if (argument.find('/') != std::string::npos) {
         // provider/model
         const size_t sl = argument.find('/');
-        std::string prov = argument.substr(0, sl), mod = argument.substr(sl+1);
-        if (!prov.empty() && !mod.empty()) { apply_spec(spec_for(prov, mod)); say("model → "+prov+"/"+mod, tui::Style::Accent); return; }
+        std::string prov = argument.substr(0, sl), mod = argument.substr(sl + 1);
+        if (!prov.empty() && !mod.empty()) {
+          apply_spec(spec_for(prov, mod));
+          say("model → " + prov + "/" + mod, tui::Style::Accent);
+          return;
+        }
       }
       // treat as search: open unified picker seeded with query
       ui_.set_input("/model " + argument);
@@ -811,7 +840,8 @@ void TuiApp::start_prompt(const std::string& text) {
   if (!agent_) return;
 
   say("› " + text, tui::Style::User);
-  ui_.set_status(std::string("thinking (") + thinking_label(options_.agent.model.thinking) + ")…", true);
+  ui_.set_status(std::string("thinking (") + thinking_label(options_.agent.model.thinking) + ")…",
+                 true);
   busy_ = true;
   worker_done_ = false;
   {
@@ -841,7 +871,10 @@ bool TuiApp::consume_events() {
       const std::string role = event.payload["role"].as_string();
       if (role == "assistant") {
         if (!ui_.streaming()) ui_.stream_begin(tui::Style::Assistant);
-        if (!completion_active_) ui_.set_status(std::string("thinking (") + thinking_label(options_.agent.model.thinking) + ")…", true);
+        if (!completion_active_)
+          ui_.set_status(std::string("thinking (") + thinking_label(options_.agent.model.thinking) +
+                             ")…",
+                         true);
       }
     } else if (event.type == "message_update") {
       const std::string delta = event.payload["delta"].as_string();
@@ -888,7 +921,8 @@ bool TuiApp::consume_events() {
       if (ui_.streaming()) ui_.stream_end();
       const bool is_error = event.payload["isError"].as_bool(false);
       const std::string result = event.payload["result"].as_string();
-      say(std::string(is_error ? "  ✗ " : "  ✓ ") + name_or(event), is_error ? tui::Style::Error : tui::Style::Success);
+      say(std::string(is_error ? "  ✗ " : "  ✓ ") + name_or(event),
+          is_error ? tui::Style::Error : tui::Style::Success);
       if (!result.empty()) {
         // Render full result as wrapped transcript lines (no "..." truncation).
         // Large outputs remain scrollable (PgUp/PgDn) instead of hidden.
@@ -1001,12 +1035,12 @@ int run_tui_app(TuiAppOptions options) {
   return app.run();
 }
 
-
 namespace {
 bool contains_ic(const std::string& hay, const std::string& needle) {
   if (needle.empty()) return true;
-  auto it = std::search(hay.begin(), hay.end(), needle.begin(), needle.end(),
-    [](char a,char b){ return std::tolower((unsigned char)a)==std::tolower((unsigned char)b); });
+  auto it = std::search(hay.begin(), hay.end(), needle.begin(), needle.end(), [](char a, char b) {
+    return std::tolower((unsigned char)a) == std::tolower((unsigned char)b);
+  });
   return it != hay.end();
 }
 
@@ -1015,64 +1049,72 @@ bool contains_ic(const std::string& hay, const std::string& needle) {
 int fuzzy_match(const std::string& hay, const std::string& needle) {
   if (needle.empty()) return 100;
   if (hay.empty()) return 0;
-  
+
   std::string h = hay;
   std::string n = needle;
-  std::transform(h.begin(), h.end(), h.begin(), [](unsigned char c){ return std::tolower(c); });
-  std::transform(n.begin(), n.end(), n.begin(), [](unsigned char c){ return std::tolower(c); });
-  
+  std::transform(h.begin(), h.end(), h.begin(), [](unsigned char c) { return std::tolower(c); });
+  std::transform(n.begin(), n.end(), n.begin(), [](unsigned char c) { return std::tolower(c); });
+
   const int match_bonus = 10;
   const int gap_penalty = -3;
   const int mismatch_penalty = -1;
-  
+
   // DP matrix for local alignment (Smith-Waterman)
   std::vector<std::vector<int>> dp(n.size() + 1, std::vector<int>(h.size() + 1, 0));
   int max_score = 0;
-  
+
   for (std::size_t i = 1; i <= n.size(); ++i) {
     for (std::size_t j = 1; j <= h.size(); ++j) {
-      int match = (n[i-1] == h[j-1]) ? match_bonus : mismatch_penalty;
-      int diag = dp[i-1][j-1] + match;
-      int up = dp[i-1][j] + gap_penalty;
-      int left = dp[i][j-1] + gap_penalty;
+      int match = (n[i - 1] == h[j - 1]) ? match_bonus : mismatch_penalty;
+      int diag = dp[i - 1][j - 1] + match;
+      int up = dp[i - 1][j] + gap_penalty;
+      int left = dp[i][j - 1] + gap_penalty;
       dp[i][j] = std::max({0, diag, up, left});
       max_score = std::max(max_score, dp[i][j]);
     }
   }
-  
+
   if (max_score <= 0) return 0;
-  
+
   // Bonus scoring
   int score = max_score;
-  
+
   // Bonus for prefix match
   if (h.size() >= n.size()) {
     bool is_prefix = true;
     for (std::size_t i = 0; i < n.size(); ++i) {
-      if (h[i] != n[i]) { is_prefix = false; break; }
+      if (h[i] != n[i]) {
+        is_prefix = false;
+        break;
+      }
     }
     if (is_prefix) score += 50;
   }
-  
+
   // Bonus for exact substring
   if (h.find(n) != std::string::npos) score += 30;
-  
+
   // Bonus for word boundary matches
   for (std::size_t i = 0; i + n.size() <= h.size(); ++i) {
     if (h.substr(i, n.size()) == n) {
-      bool word_boundary = (i == 0 || !std::isalnum(static_cast<unsigned char>(h[i-1]))) &&
-                           (i + n.size() == h.size() || !std::isalnum(static_cast<unsigned char>(h[i + n.size()])));
-      if (word_boundary) { score += 20; break; }
+      bool word_boundary =
+          (i == 0 || !std::isalnum(static_cast<unsigned char>(h[i - 1]))) &&
+          (i + n.size() == h.size() || !std::isalnum(static_cast<unsigned char>(h[i + n.size()])));
+      if (word_boundary) {
+        score += 20;
+        break;
+      }
     }
   }
-  
+
   // Bonus for early first character match
   std::size_t first_pos = h.find(n[0]);
-  if (first_pos != std::string::npos && first_pos < 5) score += 10 - static_cast<int>(first_pos) * 2;
-  
+  if (first_pos != std::string::npos && first_pos < 5)
+    score += 10 - static_cast<int>(first_pos) * 2;
+
   return score;
 }
-}
+} // namespace
 
 void TuiApp::clear_completion() {
   completion_active_ = false;
@@ -1102,13 +1144,18 @@ void TuiApp::update_completion() {
     completion_kind_ = CompletionKind::Provider;
     completion_prefix_ = lower(in);
     const std::vector<std::string> known = known_providers();
-    struct ScoredItem { int score; int idx; };
+    struct ScoredItem {
+      int score;
+      int idx;
+    };
     std::vector<ScoredItem> scored;
     for (std::size_t i = 0; i < known.size(); ++i) {
       int score = fuzzy_match(known[i], completion_prefix_);
-      if (score > 0 || contains_ic(known[i], completion_prefix_)) scored.push_back({score, static_cast<int>(i)});
+      if (score > 0 || contains_ic(known[i], completion_prefix_))
+        scored.push_back({score, static_cast<int>(i)});
     }
-    std::sort(scored.begin(), scored.end(), [](const ScoredItem& a, const ScoredItem& b) { return a.score > b.score; });
+    std::sort(scored.begin(), scored.end(),
+              [](const ScoredItem& a, const ScoredItem& b) { return a.score > b.score; });
     for (const auto& s : scored) {
       completion_filtered_.push_back(static_cast<int>(completion_all_.size()));
       completion_all_.push_back({known[static_cast<std::size_t>(s.idx)], ""});
@@ -1116,27 +1163,39 @@ void TuiApp::update_completion() {
   } else if (in.size() >= 1 && in[0] == '/' && in.find(' ') == std::string::npos) {
     completion_kind_ = CompletionKind::Command;
     completion_prefix_ = lower(in.substr(1));
-    const std::vector<std::pair<std::string,std::string>> cmds = {
-      {"login","connect provider/key"},{"logout","forget saved key"},{"model","pick or set model"},
-      {"provider","show/switch provider"},{"thinking","0 off,1 default,2 medium,3 high"},
-      {"multiline","toggle multi-line input"},{"session","show session file"},{"clear","clear transcript"},
-      {"help","show commands"},{"exit","quit"}};
-    struct ScoredItem { int score; int idx; };
+    const std::vector<std::pair<std::string, std::string>> cmds = {
+        {"login", "connect provider/key"},
+        {"logout", "forget saved key"},
+        {"model", "pick or set model"},
+        {"provider", "show/switch provider"},
+        {"thinking", "0 off,1 default,2 medium,3 high"},
+        {"multiline", "toggle multi-line input"},
+        {"session", "show session file"},
+        {"clear", "clear transcript"},
+        {"help", "show commands"},
+        {"exit", "quit"}};
+    struct ScoredItem {
+      int score;
+      int idx;
+    };
     std::vector<ScoredItem> scored;
     for (std::size_t i = 0; i < cmds.size(); ++i) {
       int score = fuzzy_match(cmds[i].first, completion_prefix_);
       if (score > 0) scored.push_back({score, static_cast<int>(i)});
     }
-    std::sort(scored.begin(), scored.end(), [](const ScoredItem& a, const ScoredItem& b) { return a.score > b.score; });
+    std::sort(scored.begin(), scored.end(),
+              [](const ScoredItem& a, const ScoredItem& b) { return a.score > b.score; });
     for (const auto& s : scored) {
       completion_filtered_.push_back(static_cast<int>(completion_all_.size()));
       completion_all_.push_back(cmds[static_cast<std::size_t>(s.idx)]);
     }
-  } else if ((in.rfind("/model ",0)==0) || (in.rfind("/models ",0)==0) || lower(trim(in))=="/model" || lower(trim(in))=="/models") {
+  } else if ((in.rfind("/model ", 0) == 0) || (in.rfind("/models ", 0) == 0) ||
+             lower(trim(in)) == "/model" || lower(trim(in)) == "/models") {
     const size_t sp = in.find(' ');
-    completion_prefix_ = (sp==std::string::npos)?"":in.substr(sp+1);
+    completion_prefix_ = (sp == std::string::npos) ? "" : in.substr(sp + 1);
     if (all_models_.empty() && !models_.empty()) {
-      for (auto& m: models_) all_models_.push_back({options_.agent.model.provider,m});
+      for (auto& m : models_)
+        all_models_.push_back({options_.agent.model.provider, m});
     }
     if (all_models_.empty() && !models_loading_all_) {
       begin_all_model_pick();
@@ -1144,7 +1203,10 @@ void TuiApp::update_completion() {
     }
     if (!all_models_.empty()) {
       completion_kind_ = CompletionKind::Model;
-      struct ScoredItem { int score; int idx; };
+      struct ScoredItem {
+        int score;
+        int idx;
+      };
       std::vector<ScoredItem> scored;
       for (std::size_t i = 0; i < all_models_.size(); ++i) {
         const auto& pm = all_models_[i];
@@ -1154,7 +1216,8 @@ void TuiApp::update_completion() {
           scored.push_back({score, static_cast<int>(i)});
         }
       }
-      std::sort(scored.begin(), scored.end(), [](const ScoredItem& a, const ScoredItem& b) { return a.score > b.score; });
+      std::sort(scored.begin(), scored.end(),
+                [](const ScoredItem& a, const ScoredItem& b) { return a.score > b.score; });
       for (const auto& s : scored) {
         const auto& pm = all_models_[static_cast<std::size_t>(s.idx)];
         completion_filtered_.push_back(static_cast<int>(completion_all_.size()));
@@ -1237,19 +1300,19 @@ void TuiApp::render_completion() {
     const auto& item = completion_all_[static_cast<std::size_t>(idx)];
     std::string text;
     switch (completion_kind_) {
-      case CompletionKind::Provider:
-        text = item.first;
-        break;
-      case CompletionKind::Command:
-        text = "/" + item.first + "  " + item.second;
-        break;
-      case CompletionKind::Model:
-        text = item.first + "/" + item.second;
-        break;
-      case CompletionKind::None:
-      default:
-        text = item.first;
-        break;
+    case CompletionKind::Provider:
+      text = item.first;
+      break;
+    case CompletionKind::Command:
+      text = "/" + item.first + "  " + item.second;
+      break;
+    case CompletionKind::Model:
+      text = item.first + "/" + item.second;
+      break;
+    case CompletionKind::None:
+    default:
+      text = item.first;
+      break;
     }
     lines.push_back(text);
   }
@@ -1262,7 +1325,8 @@ void TuiApp::render_completion() {
 
 void TuiApp::apply_completion(bool submit) {
   if (!completion_active_ || completion_filtered_.empty()) return;
-  const int idx = std::max(0, std::min(completion_index_, static_cast<int>(completion_filtered_.size()) - 1));
+  const int idx =
+      std::max(0, std::min(completion_index_, static_cast<int>(completion_filtered_.size()) - 1));
   const auto& selected = completion_all_[static_cast<std::size_t>(completion_filtered_[idx])];
   const std::string current = ui_.input();
 
@@ -1289,4 +1353,4 @@ void TuiApp::apply_completion(bool submit) {
   }
 }
 
-}  // namespace karta
+} // namespace karta

@@ -13,8 +13,8 @@
 #include <sstream>
 #include <system_error>
 
-#include "karta/core/platform.h"
 #include "karta/ai/http.h"
+#include "karta/core/platform.h"
 #include <arpa/inet.h>
 #include <netdb.h>
 
@@ -24,7 +24,8 @@ namespace karta {
 namespace {
 
 std::string lower_copy(std::string value) {
-  for (char& c : value) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  for (char& c : value)
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   return value;
 }
 
@@ -160,7 +161,8 @@ std::string glob_body(const std::string& glob) {
 
 bool glob_match(const std::string& glob, const std::string& text, bool ignore_case) {
   try {
-    const auto flags = std::regex::ECMAScript | (ignore_case ? std::regex::icase : std::regex::ECMAScript);
+    const auto flags =
+        std::regex::ECMAScript | (ignore_case ? std::regex::icase : std::regex::ECMAScript);
     const std::regex pattern("^" + glob_body(glob) + "$", flags);
     return std::regex_match(text, pattern);
   } catch (const std::regex_error&) {
@@ -211,7 +213,7 @@ IgnoreRules load_ignore_rules(const fs::path& root) {
     if (line.empty()) continue;
     if (negate) {
       rules.has_negation = true;
-      continue;  // Karta prunes conservatively; negations only disable pruning.
+      continue; // Karta prunes conservatively; negations only disable pruning.
     }
     bool dir_only = false;
     if (line.back() == '/') {
@@ -222,9 +224,9 @@ IgnoreRules load_ignore_rules(const fs::path& root) {
     if (line.empty()) continue;
     const bool anchored = line.find('/') != std::string::npos;
     try {
-      rules.patterns.emplace_back(
-          glob_to_regex_string(line, anchored, dir_only),
-          ignore_case ? (std::regex::ECMAScript | std::regex::icase) : std::regex::ECMAScript);
+      rules.patterns.emplace_back(glob_to_regex_string(line, anchored, dir_only),
+                                  ignore_case ? (std::regex::ECMAScript | std::regex::icase)
+                                              : std::regex::ECMAScript);
     } catch (const std::regex_error&) {
       // A malformed ignore line must not break a search.
     }
@@ -234,7 +236,7 @@ IgnoreRules load_ignore_rules(const fs::path& root) {
 
 const std::set<std::string>& always_skip_directories() {
   static const std::set<std::string> names = {".git", "node_modules", ".venv", "__pycache__",
-                                              ".hg", ".svn", ".cache"};
+                                              ".hg",  ".svn",         ".cache"};
   return names;
 }
 
@@ -242,8 +244,8 @@ using FileVisitor = std::function<void(const fs::directory_entry&)>;
 
 void walk_files(const fs::path& root, const IgnoreRules& rules, const FileVisitor& visitor) {
   std::error_code error;
-  fs::recursive_directory_iterator iterator(
-      root, fs::directory_options::skip_permission_denied, error);
+  fs::recursive_directory_iterator iterator(root, fs::directory_options::skip_permission_denied,
+                                            error);
   const fs::recursive_directory_iterator end;
   while (!error && iterator != end) {
     const fs::directory_entry entry = *iterator;
@@ -334,7 +336,8 @@ Json schema_object(const Json& properties, const std::vector<std::string>& requi
   schema.set("type", "object");
   schema.set("properties", properties);
   Json required_array = Json::array();
-  for (const std::string& name : required) required_array.push_back(name);
+  for (const std::string& name : required)
+    required_array.push_back(name);
   schema.set("required", required_array);
   schema.set("additionalProperties", false);
   return schema;
@@ -387,8 +390,8 @@ ToolOutcome bash_tool(const Json& args, ToolContext& context) {
     outcome.text += "\n\n[timeout: " + std::to_string(timeout) + "s]";
   }
   if (result.truncated && !result.full_output_path.empty()) {
-    outcome.text += "\n\n[" + size_label(kMaxBytes) + " limit reached; full output: " +
-                    result.full_output_path + "]";
+    outcome.text += "\n\n[" + size_label(kMaxBytes) +
+                    " limit reached; full output: " + result.full_output_path + "]";
   }
   if (result.output.empty() && !result.timed_out) outcome.text = "(no output)";
   if (result.exit_code != 0 && !result.timed_out) {
@@ -442,7 +445,8 @@ ToolOutcome read_tool(const Json& args, ToolContext& context) {
     return outcome;
   }
   std::size_t count = total - start;
-  if (requested_limit > 0) count = std::min<std::size_t>(count, static_cast<std::size_t>(requested_limit));
+  if (requested_limit > 0)
+    count = std::min<std::size_t>(count, static_cast<std::size_t>(requested_limit));
 
   std::string selected;
   for (std::size_t i = 0; i < count; ++i) {
@@ -459,8 +463,9 @@ ToolOutcome read_tool(const Json& args, ToolContext& context) {
   } else if (count < total) {
     outcome.text += "\n\n[Showing lines " + std::to_string(offset) + "-" +
                     std::to_string(offset + static_cast<long long>(count) - 1) + " of " +
-                    std::to_string(total) + ". Use offset=" +
-                    std::to_string(offset + static_cast<long long>(count)) + " to continue.]";
+                    std::to_string(total) +
+                    ". Use offset=" + std::to_string(offset + static_cast<long long>(count)) +
+                    " to continue.]";
   }
   if (total == 0) outcome.text = "(empty file)";
   return outcome;
@@ -485,8 +490,8 @@ ToolOutcome write_tool(const Json& args, ToolContext& context) {
     outcome.is_error = true;
     return outcome;
   }
-  outcome.text = "Wrote " + std::to_string(content.size()) + " bytes to " +
-                 display_path(path, context.cwd);
+  outcome.text =
+      "Wrote " + std::to_string(content.size()) + " bytes to " + display_path(path, context.cwd);
   return outcome;
 }
 
@@ -568,8 +573,7 @@ ToolOutcome edit_tool(const Json& args, ToolContext& context) {
     return outcome;
   }
   outcome.text = "Applied " + std::to_string(replacements.size()) + " edit" +
-                 (replacements.size() == 1 ? "" : "s") + " to " +
-                 display_path(path, context.cwd);
+                 (replacements.size() == 1 ? "" : "s") + " to " + display_path(path, context.cwd);
   return outcome;
 }
 
@@ -592,7 +596,8 @@ ToolOutcome grep_tool(const Json& args, ToolContext& context) {
 
   std::regex pattern;
   try {
-    auto flags = std::regex::ECMAScript | (ignore_case ? std::regex::icase : std::regex::ECMAScript);
+    auto flags =
+        std::regex::ECMAScript | (ignore_case ? std::regex::icase : std::regex::ECMAScript);
     pattern = std::regex(literal ? regex_escape(requested_pattern) : requested_pattern, flags);
   } catch (const std::regex_error&) {
     outcome.text = "invalid regex: " + requested_pattern;
@@ -601,7 +606,7 @@ ToolOutcome grep_tool(const Json& args, ToolContext& context) {
   }
 
   const IgnoreRules rules = load_ignore_rules(search_path);
-  std::vector<std::pair<std::string, std::string>> files;  // display name, absolute path
+  std::vector<std::pair<std::string, std::string>> files; // display name, absolute path
   std::error_code error;
   if (fs::is_regular_file(search_path, error)) {
     files.emplace_back(display_path(search_path, context.cwd), search_path);
@@ -640,8 +645,8 @@ ToolOutcome grep_tool(const Json& args, ToolContext& context) {
       }
       matches++;
       const long long first = std::max<long long>(0, static_cast<long long>(index) - context_lines);
-      const long long last = std::min<long long>(
-          static_cast<long long>(lines.size()) - 1, static_cast<long long>(index) + context_lines);
+      const long long last = std::min<long long>(static_cast<long long>(lines.size()) - 1,
+                                                 static_cast<long long>(index) + context_lines);
       for (long long line = first; line <= last; ++line) {
         const bool is_match = line == static_cast<long long>(index);
         if (file.first != last_file) {
@@ -652,8 +657,8 @@ ToolOutcome grep_tool(const Json& args, ToolContext& context) {
         if (line <= printed_line) continue;
         std::string text = lines[static_cast<std::size_t>(line)];
         if (text.size() > 500) text = text.substr(0, 500) + "…";
-        output << file.first << (is_match ? ":" : "-") << (line + 1) << (is_match ? ":" : "-") << text
-               << "\n";
+        output << file.first << (is_match ? ":" : "-") << (line + 1) << (is_match ? ":" : "-")
+               << text << "\n";
         printed_line = line;
       }
     }
@@ -665,12 +670,14 @@ ToolOutcome grep_tool(const Json& args, ToolContext& context) {
     return outcome;
   }
   outcome.text = output.str();
-  while (!outcome.text.empty() && outcome.text.back() == '\n') outcome.text.pop_back();
+  while (!outcome.text.empty() && outcome.text.back() == '\n')
+    outcome.text.pop_back();
   const Truncated truncated = truncate_head(outcome.text, static_cast<std::size_t>(-1), kMaxBytes);
   outcome.text = truncated.text;
   if (limit_hit) {
-    outcome.text += "\n\n[" + std::to_string(limit) + " matches limit reached. Use limit=" +
-                    std::to_string(limit * 2) + " for more, or refine pattern]";
+    outcome.text += "\n\n[" + std::to_string(limit) +
+                    " matches limit reached. Use limit=" + std::to_string(limit * 2) +
+                    " for more, or refine pattern]";
   }
   if (truncated.truncated) {
     outcome.text += "\n\n[" + size_label(kMaxBytes) + " limit reached]";
@@ -689,7 +696,7 @@ ToolOutcome glob_tool(const Json& args, ToolContext& context) {
   const std::string search_path = resolve_path(args["path"].as_string(), context.cwd);
   long long limit = args["limit"].as_int(1000);
   if (limit < 1) limit = 1;
-  long long timeout_ms = args["timeout"].as_int(30000);  // Default 30s timeout
+  long long timeout_ms = args["timeout"].as_int(30000); // Default 30s timeout
   if (timeout_ms < 0) timeout_ms = 0;
 
   std::error_code error;
@@ -703,7 +710,7 @@ ToolOutcome glob_tool(const Json& args, ToolContext& context) {
 
   std::vector<std::string> results;
   bool timed_out = false;
-  
+
   auto search_task = [&]() {
     walk_files(search_path, rules, [&](const fs::directory_entry& entry) {
       const std::string relative = fs::relative(entry.path(), search_path).generic_string();
@@ -736,13 +743,16 @@ ToolOutcome glob_tool(const Json& args, ToolContext& context) {
     return outcome;
   }
   std::string joined;
-  for (const std::string& result : results) joined += result + "\n";
-  while (!joined.empty() && joined.back() == '\n') joined.pop_back();
+  for (const std::string& result : results)
+    joined += result + "\n";
+  while (!joined.empty() && joined.back() == '\n')
+    joined.pop_back();
   const Truncated truncated = truncate_head(joined, static_cast<std::size_t>(-1), kMaxBytes);
   outcome.text = truncated.text;
   if (limit_hit) {
-    outcome.text += "\n\n[" + std::to_string(limit) + " results limit reached. Use limit=" +
-                    std::to_string(limit * 2) + " for more, or refine pattern]";
+    outcome.text += "\n\n[" + std::to_string(limit) +
+                    " results limit reached. Use limit=" + std::to_string(limit * 2) +
+                    " for more, or refine pattern]";
   }
   if (truncated.truncated) outcome.text += "\n\n[" + size_label(kMaxBytes) + " limit reached]";
   return outcome;
@@ -759,7 +769,7 @@ ToolOutcome find_tool_impl(const Json& args, ToolContext& context) {
   const std::string search_path = resolve_path(args["path"].as_string(), context.cwd);
   long long limit = args["limit"].as_int(1000);
   if (limit < 1) limit = 1;
-  long long timeout_ms = args["timeout"].as_int(30000);  // Default 30s timeout
+  long long timeout_ms = args["timeout"].as_int(30000); // Default 30s timeout
   if (timeout_ms < 0) timeout_ms = 0;
 
   std::error_code error;
@@ -774,7 +784,7 @@ ToolOutcome find_tool_impl(const Json& args, ToolContext& context) {
 
   std::vector<std::string> results;
   bool timed_out = false;
-  
+
   auto search_task = [&]() {
     walk_files(search_path, rules, [&](const fs::directory_entry& entry) {
       const std::string relative = fs::relative(entry.path(), search_path).generic_string();
@@ -808,13 +818,16 @@ ToolOutcome find_tool_impl(const Json& args, ToolContext& context) {
     return outcome;
   }
   std::string joined;
-  for (const std::string& result : results) joined += result + "\n";
-  while (!joined.empty() && joined.back() == '\n') joined.pop_back();
+  for (const std::string& result : results)
+    joined += result + "\n";
+  while (!joined.empty() && joined.back() == '\n')
+    joined.pop_back();
   const Truncated truncated = truncate_head(joined, static_cast<std::size_t>(-1), kMaxBytes);
   outcome.text = truncated.text;
   if (limit_hit) {
-    outcome.text += "\n\n[" + std::to_string(limit) + " results limit reached. Use limit=" +
-                    std::to_string(limit * 2) + " for more, or refine pattern]";
+    outcome.text += "\n\n[" + std::to_string(limit) +
+                    " results limit reached. Use limit=" + std::to_string(limit * 2) +
+                    " for more, or refine pattern]";
   }
   if (truncated.truncated) outcome.text += "\n\n[" + size_label(kMaxBytes) + " limit reached]";
   return outcome;
@@ -852,13 +865,15 @@ ToolOutcome ls_tool(const Json& args, ToolContext& context) {
     return outcome;
   }
   std::string joined;
-  for (const auto& entry : entries) joined += entry.first + "\n";
-  while (!joined.empty() && joined.back() == '\n') joined.pop_back();
+  for (const auto& entry : entries)
+    joined += entry.first + "\n";
+  while (!joined.empty() && joined.back() == '\n')
+    joined.pop_back();
   const Truncated truncated = truncate_head(joined, static_cast<std::size_t>(-1), kMaxBytes);
   outcome.text = truncated.text;
   if (limit_hit) {
-    outcome.text += "\n\n[" + std::to_string(limit) + " entries limit reached. Use limit=" +
-                    std::to_string(limit * 2) + " for more]";
+    outcome.text += "\n\n[" + std::to_string(limit) +
+                    " entries limit reached. Use limit=" + std::to_string(limit * 2) + " for more]";
   }
   if (truncated.truncated) outcome.text += "\n\n[" + size_label(kMaxBytes) + " limit reached]";
   return outcome;
@@ -868,7 +883,7 @@ ToolOutcome ls_tool(const Json& args, ToolContext& context) {
 ToolOutcome powershell_tool(const Json& args, ToolContext& context) {
   Json wrapped = args;
   wrapped.set("command", "powershell.exe -NoProfile -NonInteractive -Command \"" +
-                           args["command"].as_string() + "\"");
+                             args["command"].as_string() + "\"");
   return bash_tool(wrapped, context);
 }
 #endif
@@ -951,8 +966,8 @@ ToolOutcome patch_tool(const Json& args, ToolContext& context) {
       if (start_i <= end_j && start_j <= end_i) {
         outcome.text = "Hunks overlap in original file: hunk " + std::to_string(i + 1) +
                        " (lines " + std::to_string(start_i + 1) + "-" + std::to_string(end_i + 1) +
-                       ") overlaps with hunk " + std::to_string(j + 1) +
-                       " (lines " + std::to_string(start_j + 1) + "-" + std::to_string(end_j + 1) + ")";
+                       ") overlaps with hunk " + std::to_string(j + 1) + " (lines " +
+                       std::to_string(start_j + 1) + "-" + std::to_string(end_j + 1) + ")";
         outcome.is_error = true;
         return outcome;
       }
@@ -1016,13 +1031,15 @@ ToolOutcome patch_tool(const Json& args, ToolContext& context) {
     return outcome;
   }
   outcome.text = std::string(any_applied ? "Applied " : "Patched ") + std::to_string(hunks.size()) +
-                 " hunk" + (hunks.size() == 1 ? "" : "s") + " to " + display_path(path, context.cwd);
+                 " hunk" + (hunks.size() == 1 ? "" : "s") + " to " +
+                 display_path(path, context.cwd);
   return outcome;
 }
 
 // ---------------------------------------------------------------------- todo tool
 
-static std::map<std::string, std::vector<std::pair<std::string, bool>>> g_todo_lists;  // cwd -> {content, completed}
+static std::map<std::string, std::vector<std::pair<std::string, bool>>>
+    g_todo_lists; // cwd -> {content, completed}
 
 std::vector<std::pair<std::string, bool>>& get_todo_list(const std::string& cwd) {
   return g_todo_lists[cwd];
@@ -1157,7 +1174,7 @@ std::vector<std::string> resolve_hostname(const std::string& hostname) {
 
 bool is_url_allowed(const std::string& url, bool allow_private_ips) {
   if (allow_private_ips) return true;
-  
+
   // Parse URL to extract hostname
   std::string hostname;
   size_t scheme_end = url.find("://");
@@ -1171,7 +1188,7 @@ bool is_url_allowed(const std::string& url, bool allow_private_ips) {
   } else {
     hostname = url.substr(host_start, host_end - host_start);
   }
-  
+
   // Resolve hostname and check all IPs
   std::vector<std::string> ips = resolve_hostname(hostname);
   for (const std::string& ip : ips) {
@@ -1240,23 +1257,27 @@ ToolOutcome webfetch_tool(const Json& args, ToolContext& context) {
   }
 
   const std::string format = args["format"].as_string();
-  std::vector<std::string> headers = {"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"};
+  std::vector<std::string> headers = {
+      "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"};
   const std::atomic<bool> cancel{false};
-  
+
   // SSRF protection on redirects: validate each redirect target
   RedirectCallback redirect_validator = [&](const std::string& new_url) -> bool {
     return is_url_allowed(new_url, allow_private_ips);
   };
-  
+
   HttpResponse response = http_get(url, headers, &cancel, redirect_validator);
 
   if (!response.ok()) {
     std::string error_class;
     if (response.status >= 400 && response.status < 500) {
       error_class = " (client error - URL may be invalid or blocked)";
-      if (response.status == 404) error_class = " (not found - URL may be wrong)";
-      else if (response.status == 403) error_class = " (forbidden - site may block scrapers)";
-      else if (response.status == 429) error_class = " (rate limited - try later)";
+      if (response.status == 404)
+        error_class = " (not found - URL may be wrong)";
+      else if (response.status == 403)
+        error_class = " (forbidden - site may block scrapers)";
+      else if (response.status == 429)
+        error_class = " (rate limited - try later)";
     } else if (response.status >= 500 && response.status < 600) {
       error_class = " (server error - may be temporary)";
     }
@@ -1283,14 +1304,15 @@ ToolOutcome webfetch_tool(const Json& args, ToolContext& context) {
   return outcome;
 }
 
-}  // namespace
+} // namespace
 
 static std::string url_encode(const std::string& value) {
   std::ostringstream escaped;
   escaped.fill('0');
   escaped << std::hex;
   for (char c : value) {
-    if (std::isalnum(static_cast<unsigned char>(c)) || c == '-' || c == '_' || c == '.' || c == '~') {
+    if (std::isalnum(static_cast<unsigned char>(c)) || c == '-' || c == '_' || c == '.' ||
+        c == '~') {
       escaped << c;
     } else {
       escaped << '%' << std::uppercase << std::setw(2)
@@ -1301,8 +1323,10 @@ static std::string url_encode(const std::string& value) {
 }
 
 // DuckDuckGo instant answer API search (no API key required, like ddgs Python lib)
-static Json perform_duckduckgo_search(const std::string& query, int max_results, const std::atomic<bool>* cancel) {
-  std::string url = "https://api.duckduckgo.com/?q=" + url_encode(query) + "&format=json&no_html=1&skip_disambig=1";
+static Json perform_duckduckgo_search(const std::string& query, int max_results,
+                                      const std::atomic<bool>* cancel) {
+  std::string url = "https://api.duckduckgo.com/?q=" + url_encode(query) +
+                    "&format=json&no_html=1&skip_disambig=1";
   std::vector<std::string> headers = {"Accept: application/json"};
   HttpResponse response = http_get(url, headers, cancel);
   Json results = Json::array();
@@ -1315,7 +1339,8 @@ static Json perform_duckduckgo_search(const std::string& query, int max_results,
       Json item = Json::object();
       item.set("title", heading.empty() ? "Instant Answer" : heading);
       item.set("snippet", abstract);
-      item.set("url", abstract_url.empty() ? "https://duckduckgo.com/?q=" + url_encode(query) : abstract_url);
+      item.set("url", abstract_url.empty() ? "https://duckduckgo.com/?q=" + url_encode(query)
+                                           : abstract_url);
       results.push_back(item);
     }
     std::string definition = data["Definition"].as_string();
@@ -1324,7 +1349,8 @@ static Json perform_duckduckgo_search(const std::string& query, int max_results,
       Json item = Json::object();
       item.set("title", "Definition");
       item.set("snippet", definition);
-      item.set("url", definition_url.empty() ? "https://duckduckgo.com/?q=" + url_encode(query) : definition_url);
+      item.set("url", definition_url.empty() ? "https://duckduckgo.com/?q=" + url_encode(query)
+                                             : definition_url);
       results.push_back(item);
     }
     std::string answer = data["Answer"].as_string();
@@ -1483,11 +1509,14 @@ std::vector<ToolDefinition> builtin_tools() {
   {
     Json properties = Json::object();
     properties.set("pattern", string_property("Search pattern (regex or literal string)"));
-    properties.set("path", string_property("Directory or file to search (default: current directory)"));
+    properties.set("path",
+                   string_property("Directory or file to search (default: current directory)"));
     properties.set("glob", string_property("Filter files by glob pattern, e.g. '*.ts'"));
     properties.set("ignoreCase", boolean_property("Case-insensitive search (default: false)"));
-    properties.set("literal", boolean_property("Treat pattern as a literal string (default: false)"));
-    properties.set("context", number_property("Lines to show before and after each match (default: 0)"));
+    properties.set("literal",
+                   boolean_property("Treat pattern as a literal string (default: false)"));
+    properties.set("context",
+                   number_property("Lines to show before and after each match (default: 0)"));
     properties.set("limit", number_property("Maximum number of matches to return (default: 100)"));
 
     ToolDefinition tool;
@@ -1503,10 +1532,12 @@ std::vector<ToolDefinition> builtin_tools() {
 
   {
     Json properties = Json::object();
-    properties.set("pattern", string_property("Glob pattern to match files, e.g. '*.ts' or 'src/**/*.json'"));
+    properties.set("pattern",
+                   string_property("Glob pattern to match files, e.g. '*.ts' or 'src/**/*.json'"));
     properties.set("path", string_property("Directory to search in (default: current directory)"));
     properties.set("limit", number_property("Maximum number of results (default: 1000)"));
-    properties.set("timeout", number_property("Timeout in milliseconds (default: 30000, 0 = no timeout)"));
+    properties.set("timeout",
+                   number_property("Timeout in milliseconds (default: 30000, 0 = no timeout)"));
     ToolDefinition tool;
     tool.name = "glob";
     tool.description =
@@ -1520,15 +1551,18 @@ std::vector<ToolDefinition> builtin_tools() {
 
   {
     Json properties = Json::object();
-    properties.set("pattern", string_property("Glob pattern to match files, e.g. '*.ts' or 'src/**/*.json'"));
+    properties.set("pattern",
+                   string_property("Glob pattern to match files, e.g. '*.ts' or 'src/**/*.json'"));
     properties.set("path", string_property("Directory to search in (default: current directory)"));
     properties.set("limit", number_property("Maximum number of results (default: 1000)"));
-    properties.set("timeout", number_property("Timeout in milliseconds (default: 30000, 0 = no timeout)"));
+    properties.set("timeout",
+                   number_property("Timeout in milliseconds (default: 30000, 0 = no timeout)"));
     ToolDefinition tool;
     tool.name = "find";
     tool.description =
         "Search for files by glob pattern. Returns matching file paths relative to the search "
-        "directory. Skips .git, node_modules and .gitignore-matched paths. Has 30s default timeout.";
+        "directory. Skips .git, node_modules and .gitignore-matched paths. Has 30s default "
+        "timeout.";
     tool.parameters = schema_object(properties, {"pattern"});
     tool.execute = find_tool_impl;
     tools.push_back(std::move(tool));
@@ -1570,7 +1604,8 @@ std::vector<ToolDefinition> builtin_tools() {
     tool.name = "patch";
     tool.description =
         "Apply a unified diff patch to a file. The diff must be in standard unified format "
-        "with @@ headers. Supports multiple hunks. Use for targeted changes when edit is not suitable.";
+        "with @@ headers. Supports multiple hunks. Use for targeted changes when edit is not "
+        "suitable.";
     tool.parameters = schema_object(properties, {"path", "diff"});
     tool.execute = patch_tool;
     tools.push_back(std::move(tool));
@@ -1579,7 +1614,8 @@ std::vector<ToolDefinition> builtin_tools() {
   {
     Json properties = Json::object();
     properties.set("action", string_property("Action: add, complete, update, list, clear"));
-    properties.set("content", string_property("Todo content (required for add, optional for update)"));
+    properties.set("content",
+                   string_property("Todo content (required for add, optional for update)"));
     properties.set("index", number_property("Todo index (required for complete, update)"));
     ToolDefinition tool;
     tool.name = "todo";
@@ -1594,14 +1630,17 @@ std::vector<ToolDefinition> builtin_tools() {
   {
     Json properties = Json::object();
     properties.set("url", string_property("URL to fetch (http:// or https://)"));
-    properties.set("format", string_property("Output format: text, markdown, or html (default: markdown)"));
-    properties.set("allowPrivateIps", boolean_property("Allow fetching private/internal IPs (default: false, SSRF-protected)"));
+    properties.set("format",
+                   string_property("Output format: text, markdown, or html (default: markdown)"));
+    properties.set(
+        "allowPrivateIps",
+        boolean_property("Allow fetching private/internal IPs (default: false, SSRF-protected)"));
     ToolDefinition tool;
     tool.name = "webfetch";
-    tool.description =
-        "Fetch a URL and return its content. Supports HTML-to-markdown conversion. "
-        "Use for reading web pages, API responses, or documentation. SSRF-protected (blocks loopback, "
-        "RFC1918 private, link-local, and cloud metadata IPs).";
+    tool.description = "Fetch a URL and return its content. Supports HTML-to-markdown conversion. "
+                       "Use for reading web pages, API responses, or documentation. SSRF-protected "
+                       "(blocks loopback, "
+                       "RFC1918 private, link-local, and cloud metadata IPs).";
     tool.parameters = schema_object(properties, {"url"});
     tool.execute = webfetch_tool;
     tools.push_back(std::move(tool));
@@ -1610,7 +1649,8 @@ std::vector<ToolDefinition> builtin_tools() {
   {
     Json properties = Json::object();
     properties.set("query", string_property("Search query"));
-    properties.set("maxResults", number_property("Maximum number of results (default: 10, max: 50)"));
+    properties.set("maxResults",
+                   number_property("Maximum number of results (default: 10, max: 50)"));
     ToolDefinition tool;
     tool.name = "websearch";
     tool.description =
@@ -1640,4 +1680,4 @@ Json tool_declaration(const ToolDefinition& tool) {
   return declaration;
 }
 
-}  // namespace karta
+} // namespace karta

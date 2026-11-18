@@ -25,11 +25,12 @@ std::vector<Json> tool_calls_of(const Json& message) {
 
 Json message_list(const std::vector<Json>& messages) {
   Json out = Json::array();
-  for (const Json& message : messages) out.push_back(message);
+  for (const Json& message : messages)
+    out.push_back(message);
   return out;
 }
 
-}  // namespace
+} // namespace
 
 Agent::Agent(AgentOptions options, EventSink sink)
     : options_(std::move(options)), sink_(std::move(sink)) {}
@@ -63,7 +64,8 @@ std::vector<Json> Agent::drain_steering() {
     queued.swap(steering_queue_);
   }
   std::vector<Json> messages;
-  for (std::string& text : queued) messages.push_back(make_user_message(text));
+  for (std::string& text : queued)
+    messages.push_back(make_user_message(text));
   return messages;
 }
 
@@ -74,7 +76,8 @@ std::vector<Json> Agent::drain_followups() {
     queued.swap(followup_queue_);
   }
   std::vector<Json> messages;
-  for (std::string& text : queued) messages.push_back(make_user_message(text));
+  for (std::string& text : queued)
+    messages.push_back(make_user_message(text));
   return messages;
 }
 
@@ -89,7 +92,7 @@ std::vector<Json> Agent::prompt(const std::string& text, bool emit_agent_start) 
   emit("message_start", message);
   emit("message_end", message);
   run_loop(produced);
-  
+
   // Final agent_end with all messages (matching pi format)
   Json agent_end_payload = Json::object();
   agent_end_payload.set("messages", message_list(messages_));
@@ -108,7 +111,8 @@ void Agent::run_loop(std::vector<Json>& produced) {
     while (has_more_tool_calls || !pending.empty()) {
       if (options_.max_turns > 0 && turn_count_ >= options_.max_turns) {
         Json error = Json::object();
-        error.set("message", "Maximum turn count reached (" + std::to_string(options_.max_turns) + ")");
+        error.set("message",
+                  "Maximum turn count reached (" + std::to_string(options_.max_turns) + ")");
         emit("error", error);
         emit("agent_end", Json::object());
         return;
@@ -128,7 +132,8 @@ void Agent::run_loop(std::vector<Json>& produced) {
       request.system = options_.system_prompt;
       request.messages = messages_;
       request.tools.clear();
-      for (const ToolDefinition& tool : options_.tools) request.tools.push_back(tool_declaration(tool));
+      for (const ToolDefinition& tool : options_.tools)
+        request.tools.push_back(tool_declaration(tool));
 
       Json skeleton = Json::object();
       skeleton.set("role", "assistant");
@@ -148,7 +153,7 @@ void Agent::run_loop(std::vector<Json>& produced) {
             emit("message_update", update);
           },
           &interrupted_,
-          120000);  // 2 minute overall stream timeout
+          120000); // 2 minute overall stream timeout
 
       const Json assistant = make_assistant_message(turn);
       messages_.push_back(assistant);
@@ -257,7 +262,8 @@ Agent::ToolBatch Agent::execute_tool_calls(const Json& assistant_message) {
   // For simplicity, we'll run read-only tools in parallel, and write tools sequentially
   // A more sophisticated approach would analyze oldText/newText paths
   auto is_read_only_tool = [](const std::string& name) {
-    return name == "read" || name == "grep" || name == "find" || name == "ls" || name == "glob" || name == "bash" || name == "webfetch" || name == "websearch";
+    return name == "read" || name == "grep" || name == "find" || name == "ls" || name == "glob" ||
+           name == "bash" || name == "webfetch" || name == "websearch";
   };
 
   // Execute read-only tools in parallel
@@ -268,7 +274,7 @@ Agent::ToolBatch Agent::execute_tool_calls(const Json& assistant_message) {
 
   for (size_t i = 0; i < calls.size(); ++i) {
     const auto& info = calls[i];
-    
+
     if (is_read_only_tool(info.name) && info.parse_error.empty()) {
       parallel_indices.push_back(i);
     }
@@ -289,7 +295,7 @@ Agent::ToolBatch Agent::execute_tool_calls(const Json& assistant_message) {
       if (options_.before_tool_call) {
         options_.before_tool_call(info.name, info.arguments);
       }
-      
+
       const ToolDefinition* tool = find_tool(options_.tools, info.name);
       if (!tool) {
         ToolOutcome outcome;
@@ -318,14 +324,15 @@ Agent::ToolBatch Agent::execute_tool_calls(const Json& assistant_message) {
   for (auto& fut : parallel_results) {
     auto [idx, outcome] = fut.get();
     const auto& info = calls[idx];
-    
+
     Json start = Json::object();
     start.set("toolCallId", info.id);
     start.set("toolName", info.name);
     start.set("arguments", info.arguments);
     emit("tool_execution_start", start);
 
-    const Json message = make_tool_result_message(info.id, info.name, outcome.text, outcome.is_error);
+    const Json message =
+        make_tool_result_message(info.id, info.name, outcome.text, outcome.is_error);
     batch.messages.push_back(message);
 
     // after_tool_call hook
@@ -359,11 +366,14 @@ Agent::ToolBatch Agent::execute_tool_calls(const Json& assistant_message) {
   for (size_t i = 0; i < calls.size(); ++i) {
     // Check interrupt before each tool
     if (interrupted_.load()) break;
-    
+
     // Skip already executed parallel tools
     bool was_parallel = false;
     for (size_t pidx : parallel_indices) {
-      if (pidx == i) { was_parallel = true; break; }
+      if (pidx == i) {
+        was_parallel = true;
+        break;
+      }
     }
     if (was_parallel) continue;
 
@@ -403,7 +413,8 @@ Agent::ToolBatch Agent::execute_tool_calls(const Json& assistant_message) {
       }
     }
 
-    const Json message = make_tool_result_message(info.id, info.name, outcome.text, outcome.is_error);
+    const Json message =
+        make_tool_result_message(info.id, info.name, outcome.text, outcome.is_error);
     batch.messages.push_back(message);
 
     // after_tool_call hook
@@ -478,7 +489,8 @@ long long Agent::estimate_tokens() const {
   for (const Json& message : messages_) {
     characters += block_text(message).size();
     for (const Json& block : message["content"].items()) {
-      if (block["type"].as_string() == "toolCall") characters += block["arguments"].as_string().size();
+      if (block["type"].as_string() == "toolCall")
+        characters += block["arguments"].as_string().size();
     }
   }
   return static_cast<long long>(characters / 4);
@@ -508,11 +520,11 @@ void Agent::maybe_compact() {
       "You compact conversation history for a coding agent. Preserve the user's goal, decisions, "
       "files and symbols touched, commands run, errors and their fixes, and anything still "
       "unfinished. Be specific and terse. Reply with the summary only.";
-  request.messages.push_back(
-      make_user_message("Summarize this transcript so work can continue without it:\n\n" + transcript));
+  request.messages.push_back(make_user_message(
+      "Summarize this transcript so work can continue without it:\n\n" + transcript));
 
-  const AssistantTurn turn =
-      stream_completion(options_.model, request, nullptr, &interrupted_, 60000);  // 1 minute for compaction
+  const AssistantTurn turn = stream_completion(options_.model, request, nullptr, &interrupted_,
+                                               60000); // 1 minute for compaction
   if (turn.stop_reason == "error" || turn.stop_reason == "aborted" || turn.text.empty()) {
     compaction_failed_ = true;
     Json failure = Json::object();
@@ -532,4 +544,4 @@ void Agent::maybe_compact() {
       "[Context summary: the earlier conversation was compacted]\n\n" + turn.text));
 }
 
-}  // namespace karta
+} // namespace karta

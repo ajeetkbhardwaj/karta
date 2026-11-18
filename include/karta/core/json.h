@@ -9,7 +9,7 @@
 namespace karta {
 
 class Json {
- public:
+public:
   enum class Type { Null, Bool, Number, String, Array, Object };
 
   Json();
@@ -58,7 +58,7 @@ class Json {
   // Missing-key sentinel, shared by the const accessors.
   static const Json& null_value();
 
- private:
+private:
   Type type_ = Type::Null;
   bool bool_ = false;
   double number_ = 0.0;
@@ -69,4 +69,4 @@ class Json {
 
 std::string json_escape(const std::string& value);
 
-}  // namespace karta
+} // namespace karta

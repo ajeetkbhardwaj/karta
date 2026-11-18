@@ -34,15 +34,18 @@ static Json jsonRpcNotification(const std::string& method, const Json& params) {
 }
 
 static bool isJsonRpcRequest(const Json& msg) {
-  return msg["jsonrpc"].as_string() == "2.0" && (msg["id"].is_number() || msg["id"].is_string()) && msg["method"].is_string();
+  return msg["jsonrpc"].as_string() == "2.0" && (msg["id"].is_number() || msg["id"].is_string()) &&
+         msg["method"].is_string();
 }
 
 static bool isJsonRpcResponse(const Json& msg) {
-  return msg["jsonrpc"].as_string() == "2.0" && (msg["id"].is_number() || msg["id"].is_string()) && !msg["method"].is_string();
+  return msg["jsonrpc"].as_string() == "2.0" && (msg["id"].is_number() || msg["id"].is_string()) &&
+         !msg["method"].is_string();
 }
 
 static bool isJsonRpcNotification(const Json& msg) {
-  return msg["jsonrpc"].as_string() == "2.0" && !msg["id"].is_number() && !msg["id"].is_string() && msg["method"].is_string();
+  return msg["jsonrpc"].as_string() == "2.0" && !msg["id"].is_number() && !msg["id"].is_string() &&
+         msg["method"].is_string();
 }
 
 static int64_t extractId(const Json& msg) {
@@ -124,11 +127,13 @@ Json McpClient::request(const std::string& method, const Json& params,
     if (state_ != State::Connected) {
       throw std::runtime_error("MCP client not connected");
     }
-    auto [it, inserted] = pendingRequests_.emplace(id, PendingRequest{
-        [promise = std::move(promise)](const Json& result) mutable { promise.set_value(result); },
-        [promise = std::promise<Json>()](const std::exception& err) mutable {
-          promise.set_exception(std::make_exception_ptr(err));
-        }});
+    auto [it, inserted] = pendingRequests_.emplace(
+        id, PendingRequest{[promise = std::move(promise)](const Json& result) mutable {
+                             promise.set_value(result);
+                           },
+                           [promise = std::promise<Json>()](const std::exception& err) mutable {
+                             promise.set_exception(std::make_exception_ptr(err));
+                           }});
     if (!inserted) {
       throw std::runtime_error("Duplicate request id generated");
     }
@@ -136,7 +141,9 @@ Json McpClient::request(const std::string& method, const Json& params,
 
   // Arm timeout
   if (options.timeout.has_value() || options_.requestTimeoutMs.has_value()) {
-    int timeoutMs = options.timeout.value_or(std::chrono::milliseconds(options_.requestTimeoutMs.value())).count();
+    int timeoutMs =
+        options.timeout.value_or(std::chrono::milliseconds(options_.requestTimeoutMs.value()))
+            .count();
     std::thread([this, id, timeoutMs]() {
       std::this_thread::sleep_for(std::chrono::milliseconds(timeoutMs));
       std::lock_guard<std::mutex> lock(pendingMutex_);
@@ -206,9 +213,7 @@ void McpClient::onError(std::function<void(const std::exception&)> handler) {
   errorHandler_ = std::move(handler);
 }
 
-void McpClient::onClose(std::function<void()> handler) {
-  closeHandler_ = std::move(handler);
-}
+void McpClient::onClose(std::function<void()> handler) { closeHandler_ = std::move(handler); }
 
 void McpClient::close() {
   if (state_ == State::Closed) return;
@@ -331,7 +336,8 @@ GetPromptResult McpClient::getPrompt(const std::string& name,
   params.set("name", name);
   if (!arguments.empty()) {
     Json args = Json::object();
-    for (const auto& [k, v] : arguments) args.set(k, v);
+    for (const auto& [k, v] : arguments)
+      args.set(k, v);
     params.set("arguments", args);
   }
   Json result = request("prompts/get", params, options);
@@ -362,9 +368,7 @@ CallToolResult McpClient::callTool(const std::string& name, const Json& argument
   return ctr;
 }
 
-void McpClient::ping(const McpRequestOptions& options) {
-  request("ping", Json(), options);
-}
+void McpClient::ping(const McpRequestOptions& options) { request("ping", Json(), options); }
 
 void McpClient::onNotification(const std::string& method,
                                std::function<void(const Json&)> handler) {
@@ -375,9 +379,7 @@ void McpClient::onError(std::function<void(const std::exception&)> handler) {
   errorHandler_ = std::move(handler);
 }
 
-void McpClient::onClose(std::function<void()> handler) {
-  closeHandler_ = std::move(handler);
-}
+void McpClient::onClose(std::function<void()> handler) { closeHandler_ = std::move(handler); }
 
 void McpClient::handleMessage(const JsonRpcMessage& msg) {
   if (std::holds_alternative<JsonRpcResponse>(msg)) {
@@ -417,9 +419,7 @@ void McpClient::onError(std::function<void(const std::exception&)> handler) {
   errorHandler_ = std::move(handler);
 }
 
-void McpClient::onClose(std::function<void()> handler) {
-  closeHandler_ = std::move(handler);
-}
+void McpClient::onClose(std::function<void()> handler) { closeHandler_ = std::move(handler); }
 
 void McpClient::handleTransportClose() {
   if (state_ == State::Closed) return;
@@ -439,4 +439,4 @@ void McpClient::markClosed(const std::exception& error) {
   if (closeHandler_) closeHandler_();
 }
 
-}  // namespace karta::mcp
+} // namespace karta::mcp

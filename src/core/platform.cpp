@@ -28,7 +28,7 @@ namespace {
 // Keeps the head of the stream in memory and spills the remainder to a file,
 // mirroring pi's head truncation with a full-output escape hatch.
 class OutputCollector {
- public:
+public:
   OutputCollector(std::size_t cap, std::string* head) : cap_(cap), head_(head) {}
 
   void add(const char* data, std::size_t length) {
@@ -67,7 +67,7 @@ class OutputCollector {
   bool truncated() const { return truncated_; }
   const std::string& full_path() const { return full_path_; }
 
- private:
+private:
   static std::string temp_path() {
     std::error_code error;
     std::filesystem::path dir = std::filesystem::temp_directory_path(error);
@@ -86,7 +86,7 @@ class OutputCollector {
   std::FILE* full_ = nullptr;
 };
 
-}  // namespace
+} // namespace
 
 std::string home_directory() {
 #ifdef _WIN32
@@ -170,13 +170,14 @@ namespace {
 
 std::wstring widen(const std::string& text) {
   if (text.empty()) return std::wstring();
-  const int size = MultiByteToWideChar(CP_UTF8, 0, text.c_str(), static_cast<int>(text.size()), nullptr, 0);
+  const int size =
+      MultiByteToWideChar(CP_UTF8, 0, text.c_str(), static_cast<int>(text.size()), nullptr, 0);
   std::wstring wide(static_cast<std::size_t>(size), L'\0');
   MultiByteToWideChar(CP_UTF8, 0, text.c_str(), static_cast<int>(text.size()), wide.data(), size);
   return wide;
 }
 
-}  // namespace
+} // namespace
 
 ProcessResult run_shell(const std::string& command, const std::string& cwd, int timeout_seconds,
                         std::size_t max_bytes) {
@@ -206,8 +207,9 @@ ProcessResult run_shell(const std::string& command, const std::string& cwd, int 
   std::vector<wchar_t> mutable_command(command_line.begin(), command_line.end());
   mutable_command.push_back(L'\0');
 
-  const BOOL created = CreateProcessW(nullptr, mutable_command.data(), nullptr, nullptr, TRUE,
-                                      CREATE_NO_WINDOW, nullptr, directory.c_str(), &startup, &process);
+  const BOOL created =
+      CreateProcessW(nullptr, mutable_command.data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW,
+                     nullptr, directory.c_str(), &startup, &process);
   CloseHandle(write_handle);
   if (!created) {
     CloseHandle(read_handle);
@@ -224,7 +226,8 @@ ProcessResult run_shell(const std::string& command, const std::string& cwd, int 
     DWORD available = 0;
     while (PeekNamedPipe(read_handle, nullptr, 0, nullptr, &available, nullptr) && available > 0) {
       DWORD read_bytes = 0;
-      if (!ReadFile(read_handle, buffer, sizeof(buffer), &read_bytes, nullptr) || read_bytes == 0) break;
+      if (!ReadFile(read_handle, buffer, sizeof(buffer), &read_bytes, nullptr) || read_bytes == 0)
+        break;
       collector.add(buffer, read_bytes);
     }
     if (running && timeout_seconds > 0 && std::chrono::steady_clock::now() > deadline) {
@@ -325,8 +328,7 @@ ProcessResult run_shell(const std::string& command, const std::string& cwd, int 
   if (timed_out) {
     // Drain whatever the killed process left in the pipe.
     char buffer[8192];
-    while (read(fds[0], buffer, sizeof(buffer)) > 0) {
-    }
+    while (read(fds[0], buffer, sizeof(buffer)) > 0) {}
   }
   close(fds[0]);
   collector.finish();
@@ -348,4 +350,4 @@ ProcessResult run_shell(const std::string& command, const std::string& cwd, int 
 
 #endif
 
-}  // namespace karta
+} // namespace karta

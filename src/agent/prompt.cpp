@@ -44,7 +44,7 @@ std::string read_capped(const fs::path& path) {
   return content;
 }
 
-}  // namespace
+} // namespace
 
 std::string load_project_instructions(const std::string& cwd) {
   std::string combined;
@@ -95,15 +95,14 @@ std::string build_system_prompt(const std::vector<ToolDefinition>& tools, const 
     prompt += "Platform: " + os_description() + "\n";
     prompt += "Date: " + today() + "\n\n";
     prompt += "<tools>\n" + tool_index(tools) + "</tools>\n\n";
-    prompt +=
-        "<guidelines>\n"
-        "- Read a file before changing it, and match the surrounding style.\n"
-        "- Keep edits minimal and scoped to the request; no unrequested refactors.\n"
-        "- Use grep/find/ls to locate code instead of guessing paths.\n"
-        "- Never invent command output; run the command.\n"
-        "- Report failures honestly, including checks you could not run.\n"
-        "- Do not commit, push, or deploy unless the user asks.\n"
-        "</guidelines>\n";
+    prompt += "<guidelines>\n"
+              "- Read a file before changing it, and match the surrounding style.\n"
+              "- Keep edits minimal and scoped to the request; no unrequested refactors.\n"
+              "- Use grep/find/ls to locate code instead of guessing paths.\n"
+              "- Never invent command output; run the command.\n"
+              "- Report failures honestly, including checks you could not run.\n"
+              "- Do not commit, push, or deploy unless the user asks.\n"
+              "</guidelines>\n";
   }
 
   if (!instructions.empty()) prompt += "\n" + instructions;
@@ -115,4 +114,4 @@ std::string build_system_prompt(const std::vector<ToolDefinition>& tools, const 
   return prompt;
 }
 
-}  // namespace karta
+} // namespace karta

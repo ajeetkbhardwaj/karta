@@ -10,19 +10,19 @@
 namespace karta {
 
 struct SessionRecord {
-  std::vector<Json> messages;  // replayed context (post-compaction messages only)
+  std::vector<Json> messages; // replayed context (post-compaction messages only)
   std::string id;
   std::string path;
   std::string cwd;
   std::string name;
   std::string provider;
   std::string model;
-  std::string summary;  // last compaction summary, if any
+  std::string summary; // last compaction summary, if any
   bool compacted = false;
 };
 
 class Session {
- public:
+public:
   static std::unique_ptr<Session> create(const std::string& cwd, const std::string& directory,
                                          const std::string& name, std::string* error,
                                          const std::string& explicit_id = "",
@@ -45,7 +45,7 @@ class Session {
   const std::string& path() const { return record_.path; }
   const std::string& id() const { return record_.id; }
 
- private:
+private:
   Session() = default;
   void append_entry(Json entry);
   void set_parent(const Json& entry);
@@ -55,4 +55,4 @@ class Session {
   std::string created_at_;
 };
 
-}  // namespace karta
+} // namespace karta

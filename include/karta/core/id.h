@@ -41,6 +41,6 @@ std::string uuidv7();
 // deterministic v7-derived string with the same ordering as uuidv7.
 std::string session_id();
 
-}  // namespace Id
+} // namespace Id
 
-}  // namespace karta
+} // namespace karta

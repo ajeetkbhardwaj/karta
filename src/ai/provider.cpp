@@ -8,15 +8,16 @@
 #include <sstream>
 #include <vector>
 
-#include "karta/core/auth.h"
 #include "karta/ai/http.h"
+#include "karta/core/auth.h"
 #include "karta/core/id.h"
 
 namespace karta {
 
 std::string normalize_thinking(const std::string& level) {
   std::string v = level;
-  for (char& c : v) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  for (char& c : v)
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   if (v.empty() || v == "1" || v == "default" || v == "low" || v == "minimal") return "low";
   if (v == "0" || v == "off" || v == "none" || v == "false") return "off";
   if (v == "2" || v == "medium" || v == "med") return "medium";
@@ -38,7 +39,8 @@ long long now_millis() {
 }
 
 std::string lower(std::string value) {
-  for (char& c : value) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  for (char& c : value)
+    c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
   return value;
 }
 
@@ -107,7 +109,8 @@ Json to_openai_messages(const std::vector<Json>& messages) {
         call.set("type", "function");
         Json function = Json::object();
         function.set("name", block["name"].as_string());
-        function.set("arguments", block["arguments"].is_string() ? block["arguments"].as_string() : block["arguments"].dump());
+        function.set("arguments", block["arguments"].is_string() ? block["arguments"].as_string()
+                                                                 : block["arguments"].dump());
         call.set("function", function);
         calls.push_back(call);
       }
@@ -151,7 +154,8 @@ void append_anthropic_message(Json& messages, const std::string& role, const Jso
     Json& last = messages[messages.items().size() - 1];
     if (last["role"].as_string() == role) {
       Json merged = last["content"];
-      for (const Json& block : content.items()) merged.push_back(block);
+      for (const Json& block : content.items())
+        merged.push_back(block);
       last.set("content", merged);
       return;
     }
@@ -180,7 +184,8 @@ Json to_anthropic_messages(const std::vector<Json>& messages) {
         use.set("type", "tool_use");
         use.set("id", block["id"].as_string());
         use.set("name", block["name"].as_string());
-        std::string raw = block["arguments"].is_string() ? block["arguments"].as_string() : block["arguments"].dump();
+        std::string raw = block["arguments"].is_string() ? block["arguments"].as_string()
+                                                         : block["arguments"].dump();
         std::string parse_error;
         Json input = Json::parse(raw.empty() ? "{}" : raw, &parse_error);
         use.set("input", parse_error.empty() ? input : Json::object());
@@ -241,7 +246,8 @@ struct SseParser {
       if (!line.empty() && line.back() == '\r') line.pop_back();
       if (line.rfind("event:", 0) == 0) {
         event_name = line.substr(6);
-        while (!event_name.empty() && event_name.front() == ' ') event_name.erase(event_name.begin());
+        while (!event_name.empty() && event_name.front() == ' ')
+          event_name.erase(event_name.begin());
       } else if (line.rfind("data:", 0) == 0) {
         std::string value = line.substr(5);
         if (!value.empty() && value.front() == ' ') value.erase(value.begin());
@@ -270,11 +276,12 @@ std::string get_api_key_from_env(const std::string& provider) {
   return "";
 }
 
-}  // namespace
+} // namespace
 
 std::vector<std::string> known_providers() {
   std::vector<std::string> names;
-  for (const auto& entry : providers()) names.push_back(entry.first);
+  for (const auto& entry : providers())
+    names.push_back(entry.first);
   return names;
 }
 
@@ -365,18 +372,29 @@ ModelSpec resolve_model_spec(const std::string& provider_arg, const std::string&
     }
   }
   if (spec.provider.empty()) spec.provider = "anthropic";
-if (spec.model.empty()) {
-    if (spec.provider == "anthropic") spec.model = "claude-sonnet-4-5";
-    else if (spec.provider == "openai") spec.model = "gpt-4o-mini";
-    else if (spec.provider == "openrouter") spec.model = "openai/gpt-4o-mini";
-    else if (spec.provider == "groq") spec.model = "llama-3.1-70b-versatile";
-    else if (spec.provider == "deepseek") spec.model = "deepseek-chat";
-    else if (spec.provider == "xai") spec.model = "grok-beta";
-    else if (spec.provider == "mistral") spec.model = "mistral-large-latest";
-    else if (spec.provider == "nvidia") spec.model = "nvidia/nemotron-3.5-lightning-30b-a3b";
-    else if (spec.provider == "ollama") spec.model = "llama3.1";
-    else if (spec.provider == "lmstudio") spec.model = "local-model";
-    else spec.model = "default";
+  if (spec.model.empty()) {
+    if (spec.provider == "anthropic")
+      spec.model = "claude-sonnet-4-5";
+    else if (spec.provider == "openai")
+      spec.model = "gpt-4o-mini";
+    else if (spec.provider == "openrouter")
+      spec.model = "openai/gpt-4o-mini";
+    else if (spec.provider == "groq")
+      spec.model = "llama-3.1-70b-versatile";
+    else if (spec.provider == "deepseek")
+      spec.model = "deepseek-chat";
+    else if (spec.provider == "xai")
+      spec.model = "grok-beta";
+    else if (spec.provider == "mistral")
+      spec.model = "mistral-large-latest";
+    else if (spec.provider == "nvidia")
+      spec.model = "nvidia/nemotron-3.5-lightning-30b-a3b";
+    else if (spec.provider == "ollama")
+      spec.model = "llama3.1";
+    else if (spec.provider == "lmstudio")
+      spec.model = "local-model";
+    else
+      spec.model = "default";
   }
 
   const auto it = providers().find(spec.provider);
@@ -390,12 +408,16 @@ if (spec.model.empty()) {
     spec.api_key = api_key_arg.empty() ? get_api_key_from_env(spec.provider) : api_key_arg;
   }
 
-  while (!spec.base_url.empty() && spec.base_url.back() == '/') spec.base_url.pop_back();
+  while (!spec.base_url.empty() && spec.base_url.back() == '/')
+    spec.base_url.pop_back();
   const std::string env_max = env_or_empty("KARTA_MAX_TOKENS");
-  if (!env_max.empty()) spec.max_tokens = std::atoi(env_max.c_str()) > 0 ? std::atoi(env_max.c_str()) : spec.max_tokens;
+  if (!env_max.empty())
+    spec.max_tokens = std::atoi(env_max.c_str()) > 0 ? std::atoi(env_max.c_str()) : spec.max_tokens;
   const std::string env_thinking = env_or_empty("KARTA_THINKING");
-  if (!env_thinking.empty()) spec.thinking = normalize_thinking(env_thinking);
-  else spec.thinking = normalize_thinking(spec.thinking);
+  if (!env_thinking.empty())
+    spec.thinking = normalize_thinking(env_thinking);
+  else
+    spec.thinking = normalize_thinking(spec.thinking);
   return spec;
 }
 
@@ -424,7 +446,8 @@ AssistantTurn stream_openai(const ModelSpec& spec, const LlmRequest& request,
     body.set("tool_choice", "auto");
   }
   const std::string provider = lower(spec.provider);
-  if (provider == "openai" || provider == "openrouter" || provider == "groq" || provider == "deepseek") {
+  if (provider == "openai" || provider == "openrouter" || provider == "groq" ||
+      provider == "deepseek") {
     Json options = Json::object();
     options.set("include_usage", true);
     body.set("stream_options", options);
@@ -470,17 +493,31 @@ AssistantTurn stream_openai(const ModelSpec& spec, const LlmRequest& request,
     const Json& delta = choice["delta"];
     // OpenAI-compatible reasoning/thinking deltas (kept visible so output isn't "missing")
     std::string rpiece;
-    if (delta["reasoning_content"].is_string()) rpiece = delta["reasoning_content"].as_string();
-    else if (delta["reasoning"].is_string()) rpiece = delta["reasoning"].as_string();
-    else if (delta["thinking"].is_string()) rpiece = delta["thinking"].as_string();
+    if (delta["reasoning_content"].is_string())
+      rpiece = delta["reasoning_content"].as_string();
+    else if (delta["reasoning"].is_string())
+      rpiece = delta["reasoning"].as_string();
+    else if (delta["thinking"].is_string())
+      rpiece = delta["thinking"].as_string();
     if (!rpiece.empty()) {
-      if (!reasoning_seen) { reasoning_seen = true; const std::string m="\n[thinking]\n"; turn.text+=m; if(on_text) on_text(m); }
-      turn.text += rpiece; if (on_text) on_text(rpiece);
+      if (!reasoning_seen) {
+        reasoning_seen = true;
+        const std::string m = "\n[thinking]\n";
+        turn.text += m;
+        if (on_text) on_text(m);
+      }
+      turn.text += rpiece;
+      if (on_text) on_text(rpiece);
     }
     if (delta["content"].is_string()) {
       const std::string piece = delta["content"].as_string();
       if (!piece.empty()) {
-        if (reasoning_seen && !reasoning_closed) { reasoning_closed = true; const std::string m="\n[/thinking]\n\n"; turn.text+=m; if(on_text) on_text(m); }
+        if (reasoning_seen && !reasoning_closed) {
+          reasoning_closed = true;
+          const std::string m = "\n[/thinking]\n\n";
+          turn.text += m;
+          if (on_text) on_text(m);
+        }
         turn.text += piece;
         if (on_text) on_text(piece);
       }
@@ -490,7 +527,8 @@ AssistantTurn stream_openai(const ModelSpec& spec, const LlmRequest& request,
       ToolCall& slot = partial_calls[index];
       if (call["id"].is_string()) slot.id = call["id"].as_string();
       if (call["function"]["name"].is_string()) slot.name = call["function"]["name"].as_string();
-      if (call["function"]["arguments"].is_string()) slot.arguments += call["function"]["arguments"].as_string();
+      if (call["function"]["arguments"].is_string())
+        slot.arguments += call["function"]["arguments"].as_string();
       // Generate idempotency key when we first get the tool call ID
       if (slot.idempotency_key.empty() && !slot.id.empty()) {
         slot.idempotency_key = "idem-" + Id::uuidv7();
@@ -498,28 +536,30 @@ AssistantTurn stream_openai(const ModelSpec& spec, const LlmRequest& request,
     }
     if (choice["finish_reason"].is_string()) {
       const std::string reason = choice["finish_reason"].as_string();
-      if (reason == "tool_calls") turn.stop_reason = "toolUse";
-      else if (reason == "length") turn.stop_reason = "length";
-      else turn.stop_reason = "stop";
+      if (reason == "tool_calls")
+        turn.stop_reason = "toolUse";
+      else if (reason == "length")
+        turn.stop_reason = "length";
+      else
+        turn.stop_reason = "stop";
     }
   };
 
   const std::string url = spec.base_url + "/chat/completions";
   const auto stream_start = std::chrono::steady_clock::now();
-  const auto stream_deadline = timeout_ms > 0 
-      ? stream_start + std::chrono::milliseconds(timeout_ms) 
-      : std::chrono::steady_clock::time_point::max();
+  const auto stream_deadline = timeout_ms > 0 ? stream_start + std::chrono::milliseconds(timeout_ms)
+                                              : std::chrono::steady_clock::time_point::max();
 
   const HttpResponse response = http_post_stream(
       url, headers, body.dump(),
       [&](const char* data, std::size_t length) {
         // Check overall timeout
         if (timeout_ms > 0 && std::chrono::steady_clock::now() >= stream_deadline) {
-          return false;  // Abort
+          return false; // Abort
         }
         // Check cancel flag
         if (cancel && cancel->load()) return false;
-        
+
         raw_body.append(data, length);
         if (raw_body.size() > 4 * 1024 * 1024) raw_body.erase(0, raw_body.size() - 4 * 1024 * 1024);
         parser.feed(data, length);
@@ -584,8 +624,7 @@ AssistantTurn stream_anthropic(const ModelSpec& spec, const LlmRequest& request,
   body.set("messages", to_anthropic_messages(request.messages));
   if (!request.tools.empty()) body.set("tools", to_anthropic_tools(request.tools));
 
-  std::vector<std::string> headers = {"Content-Type: application/json",
-                                      "Accept: text/event-stream",
+  std::vector<std::string> headers = {"Content-Type: application/json", "Accept: text/event-stream",
                                       "anthropic-version: 2023-06-01"};
   if (!spec.api_key.empty()) headers.push_back("x-api-key: " + spec.api_key);
 
@@ -623,25 +662,40 @@ AssistantTurn stream_anthropic(const ModelSpec& spec, const LlmRequest& request,
       if (dt == "text_delta") {
         const std::string piece = delta["text"].as_string();
         if (!piece.empty()) {
-          if (reasoning_seen && !reasoning_closed) { reasoning_closed = true; const std::string m="\n[/thinking]\n\n"; turn.text+=m; if(on_text) on_text(m); }
+          if (reasoning_seen && !reasoning_closed) {
+            reasoning_closed = true;
+            const std::string m = "\n[/thinking]\n\n";
+            turn.text += m;
+            if (on_text) on_text(m);
+          }
           turn.text += piece;
           if (on_text) on_text(piece);
         }
       } else if (dt == "thinking_delta") {
         const std::string piece = delta["thinking"].as_string();
         if (!piece.empty()) {
-          if (!reasoning_seen) { reasoning_seen = true; const std::string m="\n[thinking]\n"; turn.text+=m; if(on_text) on_text(m); }
-          turn.text += piece; if (on_text) on_text(piece);
+          if (!reasoning_seen) {
+            reasoning_seen = true;
+            const std::string m = "\n[thinking]\n";
+            turn.text += m;
+            if (on_text) on_text(m);
+          }
+          turn.text += piece;
+          if (on_text) on_text(piece);
         }
       } else if (dt == "input_json_delta") {
         blocks[index].arguments += delta["partial_json"].as_string();
       }
     } else if (type == "message_delta") {
       const std::string reason = event["delta"]["stop_reason"].as_string();
-      if (reason == "tool_use") turn.stop_reason = "toolUse";
-      else if (reason == "max_tokens") turn.stop_reason = "length";
-      else if (reason == "end_turn" || reason == "stop_sequence") turn.stop_reason = "stop";
-      else if (!reason.empty()) turn.stop_reason = reason;
+      if (reason == "tool_use")
+        turn.stop_reason = "toolUse";
+      else if (reason == "max_tokens")
+        turn.stop_reason = "length";
+      else if (reason == "end_turn" || reason == "stop_sequence")
+        turn.stop_reason = "stop";
+      else if (!reason.empty())
+        turn.stop_reason = reason;
       if (event["usage"].is_object()) {
         turn.usage.output_tokens = event["usage"]["output_tokens"].as_int(turn.usage.output_tokens);
       }
@@ -653,9 +707,8 @@ AssistantTurn stream_anthropic(const ModelSpec& spec, const LlmRequest& request,
 
   const std::string url = spec.base_url + "/v1/messages";
   const auto stream_start = std::chrono::steady_clock::now();
-  const auto stream_deadline = timeout_ms > 0 
-      ? stream_start + std::chrono::milliseconds(timeout_ms) 
-      : std::chrono::steady_clock::time_point::max();
+  const auto stream_deadline = timeout_ms > 0 ? stream_start + std::chrono::milliseconds(timeout_ms)
+                                              : std::chrono::steady_clock::time_point::max();
 
   const HttpResponse response = http_post_stream(
       url, headers, body.dump(),
@@ -664,7 +717,7 @@ AssistantTurn stream_anthropic(const ModelSpec& spec, const LlmRequest& request,
           return false;
         }
         if (cancel && cancel->load()) return false;
-        
+
         raw_body.append(data, length);
         if (raw_body.size() > 4 * 1024 * 1024) raw_body.erase(0, raw_body.size() - 4 * 1024 * 1024);
         parser.feed(data, length);
@@ -707,7 +760,7 @@ AssistantTurn stream_anthropic(const ModelSpec& spec, const LlmRequest& request,
   return turn;
 }
 
-}  // namespace
+} // namespace
 
 AssistantTurn stream_completion(const ModelSpec& spec, const LlmRequest& request,
                                 const TextCallback& on_text, const std::atomic<bool>* cancel,
@@ -740,7 +793,8 @@ Json make_user_message(const std::string& text) {
 }
 
 // Extended version supporting text + images
-Json make_user_message_with_images(const std::string& text, const std::vector<std::pair<std::string, std::string>>& images) {
+Json make_user_message_with_images(const std::string& text,
+                                   const std::vector<std::pair<std::string, std::string>>& images) {
   Json message = Json::object();
   message.set("role", "user");
   Json content = Json::array();
@@ -805,13 +859,9 @@ Json make_tool_result_message(const std::string& call_id, const std::string& too
 }
 
 // Extended version with structured content matching pi format
-Json make_tool_result_message_extended(const std::string& call_id,
-                                       const std::string& tool_name,
-                                       const Json& content,
-                                       bool is_error,
-                                       const Json* details,
-                                       const Json* usage,
-                                       long long duration_ms) {
+Json make_tool_result_message_extended(const std::string& call_id, const std::string& tool_name,
+                                       const Json& content, bool is_error, const Json* details,
+                                       const Json* usage, long long duration_ms) {
   Json message = Json::object();
   message.set("role", "toolResult");
   message.set("toolCallId", call_id);
@@ -825,4 +875,4 @@ Json make_tool_result_message_extended(const std::string& call_id,
   return message;
 }
 
-}  // namespace karta
+} // namespace karta

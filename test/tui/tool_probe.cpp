@@ -1,5 +1,6 @@
 // Smoke harness: runs one built-in tool directly.
-// Build: g++ -std=c++17 -I src test/tool_probe.cpp src/tools.cpp src/platform.cpp src/json.cpp -lcurl -pthread
+// Build: g++ -std=c++17 -I src test/tool_probe.cpp src/tools.cpp src/platform.cpp src/json.cpp
+// -lcurl -pthread
 #include <iostream>
 
 #include "karta/core/json.h"

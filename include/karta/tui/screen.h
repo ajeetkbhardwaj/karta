@@ -5,10 +5,10 @@
 // lives above it in tui_app.cpp.
 #pragma once
 
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-#include <memory>
 
 #include "karta/tui/editor.h"
 
@@ -122,7 +122,7 @@ struct TuiOptions {
 };
 
 class Tui {
- public:
+public:
   Tui();
   ~Tui();
 
@@ -152,7 +152,7 @@ class Tui {
   bool streaming() const { return streaming_; }
 
   void clear_transcript();
-  void set_overlay(const std::vector<std::string>& lines, int selected=-1);
+  void set_overlay(const std::vector<std::string>& lines, int selected = -1);
   void clear_overlay();
 
   void set_prompt(const std::string& label);
@@ -163,7 +163,7 @@ class Tui {
   // Multi-line input support
   void set_multiline(bool enabled);
   bool multiline() const { return multiline_; }
-  std::string input_text() const;  // Returns full text including newlines
+  std::string input_text() const; // Returns full text including newlines
   void set_input_text(const std::string& text);
   Editor* editor() const { return editor_.get(); }
 
@@ -177,7 +177,7 @@ class Tui {
 
   void draw();
 
- private:
+private:
   struct Line {
     Style style = Style::Normal;
     std::string text;
@@ -186,8 +186,8 @@ class Tui {
   size_t text_width() const;
   size_t visible_rows() const;
   void trim_transcript();
-  void scroll_up(std::size_t n=0);
-  void scroll_down(std::size_t n=0);
+  void scroll_up(std::size_t n = 0);
+  void scroll_down(std::size_t n = 0);
   bool in_transcript(int row) const;
 
   bool running_ = false;
@@ -195,8 +195,8 @@ class Tui {
   size_t cols_ = 80;
 
   std::vector<Line> lines_;
-  size_t scroll_ = 0;  // lines scrolled up from the bottom
-  size_t frame_ = 0;   // spinner animation
+  size_t scroll_ = 0; // lines scrolled up from the bottom
+  size_t frame_ = 0;  // spinner animation
 
   bool streaming_ = false;
   std::string stream_buffer_;
@@ -235,8 +235,8 @@ class Tui {
 
   void copy_selection_to_clipboard();
 
- public:
+public:
   void set_completion_mode(bool active) { completion_mode_ = active; }
 };
 
-}  // namespace karta::tui
+} // namespace karta::tui

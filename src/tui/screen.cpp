@@ -1,16 +1,17 @@
 #include "karta/tui/screen.h"
-#include "karta/tui/markdown.h"
 #include "karta/tui/clipboard.h"
+#include "karta/tui/markdown.h"
 
 #include <curses.h>
 
+#include <algorithm>
 #include <clocale>
-#include <cwchar>
 #include <cstddef>
-#include <string>
-#include <vector>
+#include <cwchar>
 #include <fstream>
+#include <string>
 #include <sys/stat.h>
+#include <vector>
 
 namespace karta::tui {
 namespace {
@@ -64,24 +65,24 @@ std::vector<std::string> wrap_text(const std::string& text, std::size_t width) {
 
 int style_attr(Style style, bool colors) {
   switch (style) {
-    case Style::Dim:
-    case Style::Status:
-      return A_DIM;
-    case Style::Bold:
-      return A_BOLD;
-    case Style::Accent:
-      return A_BOLD | (colors ? COLOR_PAIR(2) : 0);
-    case Style::User:
-      return A_BOLD | (colors ? COLOR_PAIR(3) : 0);
-    case Style::Assistant:
-      return colors ? COLOR_PAIR(1) : A_NORMAL;
-    case Style::Success:
-      return colors ? COLOR_PAIR(4) : A_BOLD;
-    case Style::Error:
-      return A_BOLD | (colors ? COLOR_PAIR(5) : 0);
-    case Style::Normal:
-    default:
-      return A_NORMAL;
+  case Style::Dim:
+  case Style::Status:
+    return A_DIM;
+  case Style::Bold:
+    return A_BOLD;
+  case Style::Accent:
+    return A_BOLD | (colors ? COLOR_PAIR(2) : 0);
+  case Style::User:
+    return A_BOLD | (colors ? COLOR_PAIR(3) : 0);
+  case Style::Assistant:
+    return colors ? COLOR_PAIR(1) : A_NORMAL;
+  case Style::Success:
+    return colors ? COLOR_PAIR(4) : A_BOLD;
+  case Style::Error:
+    return A_BOLD | (colors ? COLOR_PAIR(5) : 0);
+  case Style::Normal:
+  default:
+    return A_NORMAL;
   }
 }
 
@@ -90,7 +91,7 @@ const char* spinner_frame(std::size_t index) {
   return frames[index % 4];
 }
 
-}  // namespace
+} // namespace
 
 Tui::Tui() = default;
 Tui::~Tui() { stop(); }
@@ -101,8 +102,8 @@ bool Tui::init(const TuiOptions& options) {
   editor_ = std::make_unique<Editor>();
 
   // Load saved theme if no theme provided in options
-  if (theme_.normal == -1 && theme_.accent == -1 && theme_.user == -1 &&
-      theme_.assistant == -1 && theme_.success == -1 && theme_.error == -1) {
+  if (theme_.normal == -1 && theme_.accent == -1 && theme_.user == -1 && theme_.assistant == -1 &&
+      theme_.success == -1 && theme_.error == -1) {
     load_theme();
   }
 
@@ -176,24 +177,21 @@ void Tui::set_status(const std::string& text, bool busy) {
   status_busy_ = busy;
 }
 
-void Tui::append_line(const std::string& text, Style style) {
-  append_text(text, style);
-}
+void Tui::append_line(const std::string& text, Style style) { append_text(text, style); }
 
 void Tui::append_text(const std::string& text, Style style) {
   if (!running_) return;
 
-  bool has_markdown = text.find("**") != std::string::npos ||
-                      text.find("*") != std::string::npos ||
-                      text.find("`") != std::string::npos ||
-                      text.find("[") != std::string::npos ||
+  bool has_markdown = text.find("**") != std::string::npos || text.find("*") != std::string::npos ||
+                      text.find("`") != std::string::npos || text.find("[") != std::string::npos ||
                       text.find("```") != std::string::npos;
 
   if (has_markdown) {
     append_markdown(text, style);
   } else {
     const std::vector<std::string> wrapped = wrap_text(text, text_width());
-    for (const std::string& line : wrapped) lines_.push_back({style, line});
+    for (const std::string& line : wrapped)
+      lines_.push_back({style, line});
   }
   if (!streaming_) trim_transcript();
 }
@@ -212,15 +210,19 @@ void Tui::append_markdown(const std::string& text, Style base_style) {
   auto flush_line = [&](bool force_empty) {
     if (current_text.empty() && !force_empty) return;
     Style line_style = current_style;
-    if (saw_accent) line_style = Style::Accent;
-    else if (saw_bold) line_style = Style::Bold;
-    else if (saw_code) line_style = Style::Dim;
+    if (saw_accent)
+      line_style = Style::Accent;
+    else if (saw_bold)
+      line_style = Style::Bold;
+    else if (saw_code)
+      line_style = Style::Dim;
 
     const auto wrapped = wrap_text(current_text, text_width());
     if (wrapped.empty()) {
       if (force_empty) lines_.push_back({base_style, ""});
     } else {
-      for (const auto& w : wrapped) lines_.push_back({line_style, w});
+      for (const auto& w : wrapped)
+        lines_.push_back({line_style, w});
       if (force_empty && !current_text.empty() && current_text.back() == '\n') {
         lines_.push_back({base_style, ""});
       }
@@ -238,10 +240,16 @@ void Tui::append_markdown(const std::string& text, Style base_style) {
     }
 
     std::string chunk = r.content;
-    if (r.type == MarkdownRender::NodeType::Bold) { saw_bold = true; chunk = "*" + chunk + "*"; }
-    else if (r.type == MarkdownRender::NodeType::Italic) { saw_bold = true; chunk = "_" + chunk + "_"; }
-    else if (r.type == MarkdownRender::NodeType::Code) { saw_code = true; chunk = "`" + chunk + "`"; }
-    else if (r.type == MarkdownRender::NodeType::Link) {
+    if (r.type == MarkdownRender::NodeType::Bold) {
+      saw_bold = true;
+      chunk = "*" + chunk + "*";
+    } else if (r.type == MarkdownRender::NodeType::Italic) {
+      saw_bold = true;
+      chunk = "_" + chunk + "_";
+    } else if (r.type == MarkdownRender::NodeType::Code) {
+      saw_code = true;
+      chunk = "`" + chunk + "`";
+    } else if (r.type == MarkdownRender::NodeType::Link) {
       saw_accent = true;
       chunk = r.href.empty() ? ("[" + chunk + "]") : ("[" + chunk + "](" + r.href + ")");
     }
@@ -280,7 +288,8 @@ void Tui::stream_delta(const std::string& delta) {
   }
   stream_buffer_ += delta;
   const std::vector<std::string> wrapped = wrap_text(stream_buffer_, text_width());
-  for (const std::string& line : wrapped) lines_.push_back({stream_style_, line});
+  for (const std::string& line : wrapped)
+    lines_.push_back({stream_style_, line});
 }
 
 void Tui::stream_end() {
@@ -291,8 +300,14 @@ void Tui::stream_end() {
   if (!lines_.empty() && !lines_.back().text.empty()) lines_.push_back({Style::Normal, ""});
 }
 
-void Tui::set_overlay(const std::vector<std::string>& lines, int selected) { overlay_lines_ = lines; overlay_selected_ = selected; }
-void Tui::clear_overlay() { overlay_lines_.clear(); overlay_selected_ = -1; }
+void Tui::set_overlay(const std::vector<std::string>& lines, int selected) {
+  overlay_lines_ = lines;
+  overlay_selected_ = selected;
+}
+void Tui::clear_overlay() {
+  overlay_lines_.clear();
+  overlay_selected_ = -1;
+}
 void Tui::clear_transcript() {
   lines_.clear();
   streaming_ = false;
@@ -347,7 +362,7 @@ void Tui::set_input_text(const std::string& text) {
 void Tui::apply_theme(const ThemeColors& theme) {
   theme_ = theme;
   if (!running_ || !colors_) return;
-  
+
   int background = COLOR_BLACK;
 #ifdef NCURSES_VERSION
   if (use_default_colors() == OK) background = -1;
@@ -363,25 +378,28 @@ void Tui::apply_theme(const ThemeColors& theme) {
   init_pair(4, get_color(theme_.success, COLOR_GREEN), background);
   init_pair(5, get_color(theme_.error, COLOR_RED), background);
   init_pair(6, get_color(theme_.assistant, COLOR_MAGENTA), background);
-  
+
   // Redraw immediately
   draw();
 }
 
 void Tui::save_theme(const std::string& path) const {
-  std::string config_path = path.empty() ? (getenv("HOME") ? std::string(getenv("HOME")) + "/.karta/theme.json" : "theme.json") : path;
-  
+  std::string config_path =
+      path.empty()
+          ? (getenv("HOME") ? std::string(getenv("HOME")) + "/.karta/theme.json" : "theme.json")
+          : path;
+
   // Create directory if needed
   std::string dir = config_path.substr(0, config_path.find_last_of('/'));
-  #ifdef _WIN32
+#ifdef _WIN32
   _mkdir(dir.c_str());
-  #else
+#else
   mkdir(dir.c_str(), 0700);
-  #endif
-  
+#endif
+
   std::ofstream f(config_path);
   if (!f) return;
-  
+
   f << "{\n";
   f << "  \"normal\": " << theme_.normal << ",\n";
   f << "  \"dim\": " << theme_.dim << ",\n";
@@ -402,13 +420,16 @@ void Tui::save_theme(const std::string& path) const {
 }
 
 void Tui::load_theme(const std::string& path) {
-  std::string config_path = path.empty() ? (getenv("HOME") ? std::string(getenv("HOME")) + "/.karta/theme.json" : "theme.json") : path;
-  
+  std::string config_path =
+      path.empty()
+          ? (getenv("HOME") ? std::string(getenv("HOME")) + "/.karta/theme.json" : "theme.json")
+          : path;
+
   std::ifstream f(config_path);
   if (!f) return;
-  
+
   std::string content((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
-  
+
   // Simple JSON parsing for our known keys
   auto extract = [&](const std::string& key, int& out) {
     std::string search = "\"" + key + "\"";
@@ -423,7 +444,7 @@ void Tui::load_theme(const std::string& path) {
       }
     }
   };
-  
+
   extract("normal", theme_.normal);
   extract("dim", theme_.dim);
   extract("bold", theme_.bold);
@@ -443,14 +464,14 @@ void Tui::load_theme(const std::string& path) {
 
 void Tui::copy_selection_to_clipboard() {
   if (!mouse_selecting_) return;
-  
+
   const std::size_t visible = visible_rows();
   const std::size_t total = lines_.size();
   if (total == 0) return;
-  
+
   std::size_t max_scroll = 0;
   if (total > visible) max_scroll = total - visible;
-  
+
   // Convert screen row to line index in lines_ (accounting for line wrapping)
   auto row_to_line_idx = [&](int row) -> std::size_t {
     if (row < 2) return 0;
@@ -464,7 +485,8 @@ void Tui::copy_selection_to_clipboard() {
     std::size_t vis_count = 0;
     for (std::size_t i = start_idx; i < total; ++i) {
       const auto& line = lines_[i];
-      std::size_t wrapped = (line.text.empty() ? 1 : ((line.text.size() + text_width() - 1) / text_width()));
+      std::size_t wrapped =
+          (line.text.empty() ? 1 : ((line.text.size() + text_width() - 1) / text_width()));
       if (vis_count + wrapped > vis_idx) {
         line_idx = i;
         break;
@@ -474,18 +496,18 @@ void Tui::copy_selection_to_clipboard() {
     }
     return (line_idx < total) ? line_idx : total - 1;
   };
-  
+
   std::size_t line_start = row_to_line_idx(mouse_sel_start_);
   std::size_t line_end = row_to_line_idx(mouse_sel_end_);
-  
+
   if (line_start > line_end) std::swap(line_start, line_end);
-  
+
   std::string selected;
   for (std::size_t i = line_start; i <= line_end; ++i) {
     selected += lines_[i].text;
     if (i != line_end) selected += "\n";
   }
-  
+
   if (!selected.empty()) {
     clipboard_copy(selected);
   }
@@ -493,15 +515,13 @@ void Tui::copy_selection_to_clipboard() {
   mouse_selecting_ = false;
 }
 
-std::size_t Tui::text_width() const {
-  return cols_ > 2 ? cols_ - 1 : 1;
-}
+std::size_t Tui::text_width() const { return cols_ > 2 ? cols_ - 1 : 1; }
 
 std::size_t Tui::visible_rows() const {
   if (rows_ < 11) return 1;
-  return rows_ - 6;  // transcript: rows 2..rows_-5; status rows_-4, rule rows_-3, input rows_-2, rule rows_-1
+  return rows_ - 6; // transcript: rows 2..rows_-5; status rows_-4, rule rows_-3, input rows_-2,
+                    // rule rows_-1
 }
-
 
 void Tui::scroll_up(std::size_t n) {
   if (n == 0) n = visible_rows() > 3 ? 3 : 1;
@@ -525,7 +545,9 @@ void Tui::scroll_down(std::size_t n) {
 bool Tui::in_transcript(int row) const {
   // transcript occupies rows 2 .. rows_-5
   if (rows_ < 11) return false;
-  int overlay_n = static_cast<int>(overlay_lines_.size()); int max_overlay = (rows_ > 12) ? 8 : 4; if (overlay_n > max_overlay) overlay_n = max_overlay;
+  int overlay_n = static_cast<int>(overlay_lines_.size());
+  int max_overlay = (rows_ > 12) ? 8 : 4;
+  if (overlay_n > max_overlay) overlay_n = max_overlay;
   return row >= 2 && row < static_cast<int>(rows_) - 4 - overlay_n;
 }
 
@@ -545,29 +567,47 @@ Key Tui::poll(int* out_ch) {
     MEVENT ev;
     if (getmouse(&ev) == OK) {
       const bool in_tx = in_transcript(ev.y);
-      const bool in_overlay = overlay_selected_ >= 0 && ev.y >= 2 && ev.y < static_cast<int>(rows_) - 4 && static_cast<size_t>(ev.y - 2) < overlay_lines_.size();
+      const bool in_overlay = overlay_selected_ >= 0 && ev.y >= 2 &&
+                              ev.y < static_cast<int>(rows_) - 4 &&
+                              static_cast<size_t>(ev.y - 2) < overlay_lines_.size();
 
 #if NCURSES_MOUSE_VERSION >= 2
-      if (ev.bstate & (BUTTON4_PRESSED | BUTTON4_RELEASED | BUTTON4_CLICKED | BUTTON4_DOUBLE_CLICKED | BUTTON4_TRIPLE_CLICKED)) { if (in_tx) scroll_up(3); return Key::Mouse; }
-      if (ev.bstate & (BUTTON5_PRESSED | BUTTON5_RELEASED | BUTTON5_CLICKED | BUTTON5_DOUBLE_CLICKED | BUTTON5_TRIPLE_CLICKED)) { if (in_tx) scroll_down(3); return Key::Mouse; }
+      if (ev.bstate & (BUTTON4_PRESSED | BUTTON4_RELEASED | BUTTON4_CLICKED |
+                       BUTTON4_DOUBLE_CLICKED | BUTTON4_TRIPLE_CLICKED)) {
+        if (in_tx) scroll_up(3);
+        return Key::Mouse;
+      }
+      if (ev.bstate & (BUTTON5_PRESSED | BUTTON5_RELEASED | BUTTON5_CLICKED |
+                       BUTTON5_DOUBLE_CLICKED | BUTTON5_TRIPLE_CLICKED)) {
+        if (in_tx) scroll_down(3);
+        return Key::Mouse;
+      }
 #else
 #ifdef BUTTON4_PRESSED
-      if (ev.bstate & (BUTTON4_PRESSED | BUTTON4_RELEASED)) { if (in_tx) scroll_up(3); return Key::Mouse; }
+      if (ev.bstate & (BUTTON4_PRESSED | BUTTON4_RELEASED)) {
+        if (in_tx) scroll_up(3);
+        return Key::Mouse;
+      }
 #endif
 #ifdef BUTTON5_PRESSED
-      if (ev.bstate & (BUTTON5_PRESSED | BUTTON5_RELEASED)) { if (in_tx) scroll_down(3); return Key::Mouse; }
+      if (ev.bstate & (BUTTON5_PRESSED | BUTTON5_RELEASED)) {
+        if (in_tx) scroll_down(3);
+        return Key::Mouse;
+      }
 #endif
 #endif
 
       // Left click/drag: text selection in transcript
-      // Note: BUTTON1_DRAG not available in all ncurses; use BUTTON1_PRESSED + REPORT_MOUSE_POSITION
+      // Note: BUTTON1_DRAG not available in all ncurses; use BUTTON1_PRESSED +
+      // REPORT_MOUSE_POSITION
       if (ev.bstate & (BUTTON1_PRESSED | BUTTON1_CLICKED | BUTTON1_RELEASED)) {
         if (in_tx) {
           if (ev.bstate & BUTTON1_PRESSED) {
             mouse_sel_start_ = ev.y;
             mouse_sel_end_ = ev.y;
             mouse_selecting_ = true;
-          } else if (mouse_selecting_ && (ev.bstate & REPORT_MOUSE_POSITION) && (ev.bstate & BUTTON1_PRESSED)) {
+          } else if (mouse_selecting_ && (ev.bstate & REPORT_MOUSE_POSITION) &&
+                     (ev.bstate & BUTTON1_PRESSED)) {
             // Drag while button 1 pressed
             mouse_sel_end_ = ev.y;
           } else if ((ev.bstate & (BUTTON1_CLICKED | BUTTON1_RELEASED)) && mouse_selecting_) {
@@ -600,18 +640,21 @@ Key Tui::poll(int* out_ch) {
     // Enter = submit, Shift+Enter = new line (where supported by terminal)
     // Handle Shift+Enter escape sequences: \x1b[13;2u, \x1b[27;2;13~, etc.
     // These may arrive as ESC-prefixed CSI sequences
-    if (ch == 27) {  // ESC - could be start of CSI sequence for Shift+Enter or Alt+Enter
+    if (ch == 27) { // ESC - could be start of CSI sequence for Shift+Enter or Alt+Enter
       int next = wgetch(stdscr);
       if (next == ERR) return Key::Escape;
       if (next == '[') {
         // CSI sequence: read parameters
         int c2 = wgetch(stdscr);
-        if (c2 == ERR) { ungetch(next); return Key::Escape; }
+        if (c2 == ERR) {
+          ungetch(next);
+          return Key::Escape;
+        }
         if (c2 >= '0' && c2 <= '9') {
           std::string seq;
           seq += static_cast<char>(c2);
           int loop_count = 0;
-          while (loop_count < 16) {  // Max sequence length to prevent infinite loop
+          while (loop_count < 16) { // Max sequence length to prevent infinite loop
             int cn = wgetch(stdscr);
             if (cn == ERR) break;
             char chn = static_cast<char>(cn);
@@ -649,12 +692,15 @@ Key Tui::poll(int* out_ch) {
       if (c1 == ERR) return Key::Enter;
       if (c1 == '[') {
         int c2 = wgetch(stdscr);
-        if (c2 == ERR) { ungetch(c1); return Key::Enter; }
+        if (c2 == ERR) {
+          ungetch(c1);
+          return Key::Enter;
+        }
         if (c2 >= '0' && c2 <= '9') {
           std::string seq;
           seq += static_cast<char>(c2);
           int loop_count = 0;
-          while (loop_count < 16) {  // Max sequence length
+          while (loop_count < 16) { // Max sequence length
             int cn = wgetch(stdscr);
             if (cn == ERR) break;
             char chn = static_cast<char>(cn);
@@ -677,41 +723,41 @@ Key Tui::poll(int* out_ch) {
     }
 
     switch (ch) {
-      case KEY_BACKSPACE:
-      case 127:
-      case 8: {
-        editor_->backspace();
-        return Key::Backspace;
-      }
-      case KEY_DC: {
-        editor_->delete_char();
-        return Key::Delete;
-      }
-      case KEY_LEFT: {
-        editor_->move_left();
-        return Key::Left;
-      }
-      case KEY_RIGHT: {
-        editor_->move_right();
-        return Key::Right;
-      }
-      case KEY_UP: {
-        editor_->move_up();
-        return Key::Up;
-      }
-      case KEY_DOWN: {
-        editor_->move_down();
-        return Key::Down;
-      }
-      case KEY_HOME: {
-        editor_->move_home();
-        return Key::Home;
-      }
-      case KEY_END: {
-        editor_->move_end();
-        return Key::End;
-      }
-case KEY_PPAGE: {
+    case KEY_BACKSPACE:
+    case 127:
+    case 8: {
+      editor_->backspace();
+      return Key::Backspace;
+    }
+    case KEY_DC: {
+      editor_->delete_char();
+      return Key::Delete;
+    }
+    case KEY_LEFT: {
+      editor_->move_left();
+      return Key::Left;
+    }
+    case KEY_RIGHT: {
+      editor_->move_right();
+      return Key::Right;
+    }
+    case KEY_UP: {
+      editor_->move_up();
+      return Key::Up;
+    }
+    case KEY_DOWN: {
+      editor_->move_down();
+      return Key::Down;
+    }
+    case KEY_HOME: {
+      editor_->move_home();
+      return Key::Home;
+    }
+    case KEY_END: {
+      editor_->move_end();
+      return Key::End;
+    }
+    case KEY_PPAGE: {
       // PageUp in multi-line: scroll transcript up (older messages)
       scroll_up(visible_rows() / 2 + 1);
       return Key::PageUp;
@@ -721,68 +767,68 @@ case KEY_PPAGE: {
       scroll_down(visible_rows() / 2 + 1);
       return Key::PageDown;
     }
-      case '\t': {
-        editor_->insert('\t');
-        return Key::Tab;
+    case '\t': {
+      editor_->insert('\t');
+      return Key::Tab;
+    }
+    // Kill-ring/editing shortcuts
+    case 11: { // Ctrl+K
+      editor_->kill_to_end();
+      return Key::CtrlK;
+    }
+    case 21: { // Ctrl+U
+      editor_->kill_to_beginning();
+      return Key::CtrlU;
+    }
+    case 23: { // Ctrl+W
+      editor_->kill_word_backward();
+      return Key::CtrlW;
+    }
+    case 1: { // Ctrl+A
+      editor_->move_home();
+      return Key::CtrlA;
+    }
+    case 5: { // Ctrl+E
+      editor_->move_end();
+      return Key::CtrlE;
+    }
+    // Undo: Ctrl+Z
+    case 26: {
+      editor_->undo();
+      return Key::CtrlZ;
+    }
+    // Redo: Ctrl+Y
+    case 25: {
+      editor_->redo();
+      return Key::CtrlY;
+    }
+    // Yank: Alt+Y (Emacs-style)
+    case 27: { // ESC
+      int next = wgetch(stdscr);
+      if (next == 'y' || next == 'Y') {
+        editor_->yank();
+        return Key::Char;
       }
-      // Kill-ring/editing shortcuts
-      case 11: {  // Ctrl+K
-        editor_->kill_to_end();
-        return Key::CtrlK;
-      }
-      case 21: {  // Ctrl+U
-        editor_->kill_to_beginning();
-        return Key::CtrlU;
-      }
-      case 23: {  // Ctrl+W
-        editor_->kill_word_backward();
-        return Key::CtrlW;
-      }
-      case 1: {   // Ctrl+A
-        editor_->move_home();
-        return Key::CtrlA;
-      }
-      case 5: {   // Ctrl+E
-        editor_->move_end();
-        return Key::CtrlE;
-      }
-      // Undo: Ctrl+Z
-      case 26: {
-        editor_->undo();
-        return Key::CtrlZ;
-      }
-      // Redo: Ctrl+Y
-      case 25: {
-        editor_->redo();
-        return Key::CtrlY;
-      }
-      // Yank: Alt+Y (Emacs-style)
-      case 27: {  // ESC
-        int next = wgetch(stdscr);
-        if (next == 'y' || next == 'Y') {
-          editor_->yank();
-          return Key::Char;
-        }
-        ungetch(next);
-        // Not Alt+Y, treat as Escape
-        return Key::Escape;
-      }
-      // Ctrl+Shift+Z for redo (some terminals map differently; best-effort)
-      case 90: {
-        editor_->redo();
-        return Key::CtrlY;
-      }
-      // History navigation in multiline: Ctrl+P (previous), Ctrl+N (next)
-      case 16: {  // Ctrl+P
-        // Signal to Tui to handle history up
-        return Key::CtrlP;
-      }
-      case 14: {  // Ctrl+N
-        // Signal to Tui to handle history down
-        return Key::CtrlN;
-      }
-      default:
-        break;
+      ungetch(next);
+      // Not Alt+Y, treat as Escape
+      return Key::Escape;
+    }
+    // Ctrl+Shift+Z for redo (some terminals map differently; best-effort)
+    case 90: {
+      editor_->redo();
+      return Key::CtrlY;
+    }
+    // History navigation in multiline: Ctrl+P (previous), Ctrl+N (next)
+    case 16: { // Ctrl+P
+      // Signal to Tui to handle history up
+      return Key::CtrlP;
+    }
+    case 14: { // Ctrl+N
+      // Signal to Tui to handle history down
+      return Key::CtrlN;
+    }
+    default:
+      break;
     }
 
     if (ch >= 32 && ch <= 255) {
@@ -795,170 +841,189 @@ case KEY_PPAGE: {
 
   // Single-line mode (original behavior)
   switch (ch) {
-    case '\n':
-    case '\r':
-    case KEY_ENTER:
-      if (!input_.empty()) {
-        history_.push_back(input_);
-        if (history_.size() > 200) history_.erase(history_.begin());
-      }
-      history_pos_ = -1;
-      history_draft_.clear();
-      return Key::Enter;
+  case '\n':
+  case '\r':
+  case KEY_ENTER:
+    if (!input_.empty()) {
+      history_.push_back(input_);
+      if (history_.size() > 200) history_.erase(history_.begin());
+    }
+    history_pos_ = -1;
+    history_draft_.clear();
+    return Key::Enter;
 
-    case 3:  // Ctrl+C
-      return Key::CtrlC;
-    case 4:  // Ctrl+D
-      return Key::CtrlD;
-    case 12: // Ctrl+L
-      return Key::CtrlL;
-    case 27:  // Escape
-      return Key::Escape;
+  case 3: // Ctrl+C
+    return Key::CtrlC;
+  case 4: // Ctrl+D
+    return Key::CtrlD;
+  case 12: // Ctrl+L
+    return Key::CtrlL;
+  case 27: // Escape
+    return Key::Escape;
 
-    case KEY_BACKSPACE:
-    case 127:
-    case 8: {
-      if (cursor_ == 0) return Key::Backspace;
-      std::size_t begin = cursor_ - 1;
-      while (begin > 0 && (static_cast<unsigned char>(input_[begin]) & 0xC0) == 0x80) --begin;
+  case KEY_BACKSPACE:
+  case 127:
+  case 8: {
+    if (cursor_ == 0) return Key::Backspace;
+    std::size_t begin = cursor_ - 1;
+    while (begin > 0 && (static_cast<unsigned char>(input_[begin]) & 0xC0) == 0x80)
+      --begin;
+    input_.erase(begin, cursor_ - begin);
+    cursor_ = begin;
+    return Key::Backspace;
+  }
+
+  case KEY_DC: {
+    if (cursor_ >= input_.size()) return Key::Delete;
+    std::size_t end = cursor_ + 1;
+    while (end < input_.size() && (static_cast<unsigned char>(input_[end]) & 0xC0) == 0x80)
+      ++end;
+    input_.erase(cursor_, end - cursor_);
+    return Key::Delete;
+  }
+
+  case KEY_LEFT: {
+    if (cursor_ > 0) {
+      --cursor_;
+      while (cursor_ > 0 && (static_cast<unsigned char>(input_[cursor_]) & 0xC0) == 0x80)
+        --cursor_;
+    }
+    return Key::Left;
+  }
+
+  case KEY_RIGHT: {
+    if (cursor_ < input_.size()) {
+      ++cursor_;
+      while (cursor_ < input_.size() &&
+             (static_cast<unsigned char>(input_[cursor_]) & 0xC0) == 0x80)
+        ++cursor_;
+    }
+    return Key::Right;
+  }
+
+  // Ctrl+Left / Ctrl+Right (word navigation)
+  case 545: // KEY_SLEFT (Ctrl+Left)
+    return Key::CtrlLeft;
+  case 560: // KEY_SRIGHT (Ctrl+Right)
+    return Key::CtrlRight;
+  case 566: // KEY_SHOME (Ctrl+Home)
+    return Key::Home;
+  case 567: // KEY_SEND (Ctrl+End)
+    return Key::End;
+  // Ctrl+Up / Ctrl+Down - scroll transcript
+  case 568: // KEY_SPREVIOUS (Ctrl+Up)
+    scroll_up(3);
+    return Key::CtrlUp;
+  case 569: // KEY_SNEXT (Ctrl+Down)
+    scroll_down(3);
+    return Key::CtrlDown;
+  // Shift+Tab
+  case 353: // KEY_STAB (Shift+Tab)
+    return Key::ShiftTab;
+  // Ctrl+Backspace / Ctrl+Delete
+  case 513: // Ctrl+Backspace (KEY_DC with Ctrl)
+    return Key::CtrlBackspace;
+  case 514: // Ctrl+Delete
+    return Key::CtrlDelete;
+  // Ctrl+A / Ctrl+E / Ctrl+K / Ctrl+U / Ctrl+W
+  case 1: // Ctrl+A (beginning of line)
+    cursor_ = 0;
+    return Key::CtrlA;
+  case 5: // Ctrl+E (end of line)
+    cursor_ = input_.size();
+    return Key::CtrlE;
+  case 11: // Ctrl+K (kill to end)
+    if (cursor_ < input_.size()) input_.erase(cursor_);
+    return Key::CtrlK;
+  case 21: // Ctrl+U (kill to beginning)
+    if (cursor_ > 0) {
+      input_.erase(0, cursor_);
+      cursor_ = 0;
+    }
+    return Key::CtrlU;
+  case 23: // Ctrl+W (kill word backward)
+    if (cursor_ > 0) {
+      std::size_t begin = cursor_;
+      while (begin > 0 && input_[begin - 1] == ' ')
+        --begin;
+      while (begin > 0 && input_[begin - 1] != ' ')
+        --begin;
       input_.erase(begin, cursor_ - begin);
       cursor_ = begin;
-      return Key::Backspace;
     }
+    return Key::CtrlW;
+  // F keys
+  case KEY_F(1):
+    return Key::F1;
+  case KEY_F(2):
+    return Key::F2;
+  case KEY_F(3):
+    return Key::F3;
+  case KEY_F(4):
+    return Key::F4;
+  case KEY_F(5):
+    return Key::F5;
+  case KEY_F(6):
+    return Key::F6;
+  case KEY_F(7):
+    return Key::F7;
+  case KEY_F(8):
+    return Key::F8;
+  case KEY_F(9):
+    return Key::F9;
+  case KEY_F(10):
+    return Key::F10;
+  case KEY_F(11):
+    return Key::F11;
+  case KEY_F(12):
+    return Key::F12;
 
-    case KEY_DC: {
-      if (cursor_ >= input_.size()) return Key::Delete;
-      std::size_t end = cursor_ + 1;
-      while (end < input_.size() && (static_cast<unsigned char>(input_[end]) & 0xC0) == 0x80) ++end;
-      input_.erase(cursor_, end - cursor_);
-      return Key::Delete;
+  case KEY_HOME:
+    cursor_ = 0;
+    return Key::Home;
+  case KEY_END:
+    cursor_ = input_.size();
+    return Key::End;
+
+  case KEY_UP:
+    if (completion_mode_) return Key::Up;
+    if (history_.empty()) return Key::Up;
+    if (history_pos_ < 0) {
+      history_draft_ = input_;
+      history_pos_ = static_cast<int>(history_.size()) - 1;
+    } else if (history_pos_ > 0) {
+      --history_pos_;
     }
+    input_ = history_[static_cast<std::size_t>(history_pos_)];
+    cursor_ = input_.size();
+    return Key::Up;
 
-    case KEY_LEFT: {
-      if (cursor_ > 0) {
-        --cursor_;
-        while (cursor_ > 0 && (static_cast<unsigned char>(input_[cursor_]) & 0xC0) == 0x80) --cursor_;
-      }
-      return Key::Left;
-    }
-
-    case KEY_RIGHT: {
-      if (cursor_ < input_.size()) {
-        ++cursor_;
-        while (cursor_ < input_.size() && (static_cast<unsigned char>(input_[cursor_]) & 0xC0) == 0x80) ++cursor_;
-      }
-      return Key::Right;
-    }
-
-    // Ctrl+Left / Ctrl+Right (word navigation)
-    case 545:  // KEY_SLEFT (Ctrl+Left)
-      return Key::CtrlLeft;
-    case 560:  // KEY_SRIGHT (Ctrl+Right)
-      return Key::CtrlRight;
-    case 566:  // KEY_SHOME (Ctrl+Home)
-      return Key::Home;
-    case 567:  // KEY_SEND (Ctrl+End)
-      return Key::End;
-    // Ctrl+Up / Ctrl+Down - scroll transcript
-    case 568:  // KEY_SPREVIOUS (Ctrl+Up)
-      scroll_up(3);
-      return Key::CtrlUp;
-    case 569:  // KEY_SNEXT (Ctrl+Down)
-      scroll_down(3);
-      return Key::CtrlDown;
-    // Shift+Tab
-    case 353:  // KEY_STAB (Shift+Tab)
-      return Key::ShiftTab;
-    // Ctrl+Backspace / Ctrl+Delete
-    case 513:  // Ctrl+Backspace (KEY_DC with Ctrl)
-      return Key::CtrlBackspace;
-    case 514:  // Ctrl+Delete
-      return Key::CtrlDelete;
-    // Ctrl+A / Ctrl+E / Ctrl+K / Ctrl+U / Ctrl+W
-    case 1:   // Ctrl+A (beginning of line)
-      cursor_ = 0;
-      return Key::CtrlA;
-    case 5:   // Ctrl+E (end of line)
-      cursor_ = input_.size();
-      return Key::CtrlE;
-    case 11:  // Ctrl+K (kill to end)
-      if (cursor_ < input_.size()) input_.erase(cursor_);
-      return Key::CtrlK;
-    case 21:  // Ctrl+U (kill to beginning)
-      if (cursor_ > 0) {
-        input_.erase(0, cursor_);
-        cursor_ = 0;
-      }
-      return Key::CtrlU;
-    case 23:  // Ctrl+W (kill word backward)
-      if (cursor_ > 0) {
-        std::size_t begin = cursor_;
-        while (begin > 0 && input_[begin - 1] == ' ') --begin;
-        while (begin > 0 && input_[begin - 1] != ' ') --begin;
-        input_.erase(begin, cursor_ - begin);
-        cursor_ = begin;
-      }
-      return Key::CtrlW;
-    // F keys
-    case KEY_F(1): return Key::F1;
-    case KEY_F(2): return Key::F2;
-    case KEY_F(3): return Key::F3;
-    case KEY_F(4): return Key::F4;
-    case KEY_F(5): return Key::F5;
-    case KEY_F(6): return Key::F6;
-    case KEY_F(7): return Key::F7;
-    case KEY_F(8): return Key::F8;
-    case KEY_F(9): return Key::F9;
-    case KEY_F(10): return Key::F10;
-    case KEY_F(11): return Key::F11;
-    case KEY_F(12): return Key::F12;
-
-    case KEY_HOME:
-      cursor_ = 0;
-      return Key::Home;
-    case KEY_END:
-      cursor_ = input_.size();
-      return Key::End;
-
-    case KEY_UP:
-      if (completion_mode_) return Key::Up;
-      if (history_.empty()) return Key::Up;
-      if (history_pos_ < 0) {
-        history_draft_ = input_;
-        history_pos_ = static_cast<int>(history_.size()) - 1;
-      } else if (history_pos_ > 0) {
-        --history_pos_;
-      }
+  case KEY_DOWN:
+    if (completion_mode_) return Key::Down;
+    if (history_pos_ < 0) return Key::Down;
+    if (static_cast<std::size_t>(history_pos_) + 1 >= history_.size()) {
+      history_pos_ = -1;
+      input_ = history_draft_;
+    } else {
+      ++history_pos_;
       input_ = history_[static_cast<std::size_t>(history_pos_)];
-      cursor_ = input_.size();
-      return Key::Up;
+    }
+    cursor_ = input_.size();
+    return Key::Down;
 
-    case KEY_DOWN:
-      if (completion_mode_) return Key::Down;
-      if (history_pos_ < 0) return Key::Down;
-      if (static_cast<std::size_t>(history_pos_) + 1 >= history_.size()) {
-        history_pos_ = -1;
-        input_ = history_draft_;
-      } else {
-        ++history_pos_;
-        input_ = history_[static_cast<std::size_t>(history_pos_)];
-      }
-      cursor_ = input_.size();
-      return Key::Down;
+  case KEY_PPAGE:
+    scroll_up(visible_rows() / 2 + 1);
+    return Key::PageUp;
 
-    case KEY_PPAGE:
-      scroll_up(visible_rows() / 2 + 1);
-      return Key::PageUp;
+  case KEY_NPAGE:
+    scroll_down(visible_rows() / 2 + 1);
+    return Key::PageDown;
 
-    case KEY_NPAGE:
-      scroll_down(visible_rows() / 2 + 1);
-      return Key::PageDown;
+  case '\t':
+    return Key::Tab;
 
-    case '\t':
-      return Key::Tab;
-
-    default:
-      break;
+  default:
+    break;
   }
 
   if (ch >= 32 && ch <= 255) {
@@ -1047,10 +1112,12 @@ void Tui::draw() {
     // Highlight mouse selection
     if (mouse_selecting_) {
       std::size_t line_idx = st + i;
-      std::size_t sel_start = std::min(static_cast<std::size_t>(mouse_sel_start_), static_cast<std::size_t>(mouse_sel_end_));
-      std::size_t sel_end = std::max(static_cast<std::size_t>(mouse_sel_start_), static_cast<std::size_t>(mouse_sel_end_));
+      std::size_t sel_start = std::min(static_cast<std::size_t>(mouse_sel_start_),
+                                       static_cast<std::size_t>(mouse_sel_end_));
+      std::size_t sel_end = std::max(static_cast<std::size_t>(mouse_sel_start_),
+                                     static_cast<std::size_t>(mouse_sel_end_));
       if (line_idx >= sel_start && line_idx <= sel_end) {
-        attr = A_REVERSE;  // Highlight selected lines
+        attr = A_REVERSE; // Highlight selected lines
       }
     }
     if (attr != A_NORMAL) attron(attr);
@@ -1061,11 +1128,16 @@ void Tui::draw() {
   int oy = static_cast<int>(2 + vis);
   for (int i = 0; i < overlay_n; ++i) {
     bool sel = (i == overlay_selected_);
-    if (sel) attron(A_REVERSE | A_BOLD);
-    else attron(A_DIM);
-    std::string ol = (sel?" > ":"   ") + overlay_lines_[static_cast<size_t>(i)];
+    if (sel)
+      attron(A_REVERSE | A_BOLD);
+    else
+      attron(A_DIM);
+    std::string ol = (sel ? " > " : "   ") + overlay_lines_[static_cast<size_t>(i)];
     put_line(oy + i, ol, cols_);
-    if (sel) attroff(A_REVERSE | A_BOLD); else attroff(A_DIM);
+    if (sel)
+      attroff(A_REVERSE | A_BOLD);
+    else
+      attroff(A_DIM);
   }
 
   std::string status = status_;
@@ -1084,7 +1156,7 @@ void Tui::draw() {
       put_line(input_start_row + static_cast<int>(i), prompt_ + rendered[i], cols_);
     }
     mvhline(static_cast<int>(rows_) - 1, 0, ACS_HLINE, static_cast<int>(cols_));
-    
+
     // Position cursor (accounting for line wrapping)
     auto [screen_row, screen_col] = editor_->cursor_screen_pos(cols_ - 2);
     int cursor_row = input_start_row + screen_row;
@@ -1107,4 +1179,4 @@ void Tui::draw() {
   refresh();
 }
 
-}  // namespace karta::tui
+} // namespace karta::tui

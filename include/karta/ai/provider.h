@@ -28,7 +28,7 @@ struct AssistantTurn {
   std::string text;
   std::vector<ToolCall> tool_calls;
   Usage usage;
-  std::string stop_reason = "stop";  // stop | length | toolUse | error | aborted
+  std::string stop_reason = "stop"; // stop | length | toolUse | error | aborted
   std::string error;
 };
 
@@ -46,8 +46,8 @@ struct ModelSpec {
 
 struct LlmRequest {
   std::string system;
-  std::vector<Json> messages;  // canonical AgentMessage objects
-  std::vector<Json> tools;     // OpenAI-style function declarations
+  std::vector<Json> messages; // canonical AgentMessage objects
+  std::vector<Json> tools;    // OpenAI-style function declarations
 };
 
 using TextCallback = std::function<void(const std::string&)>;
@@ -57,7 +57,7 @@ ModelSpec resolve_model_spec(const std::string& provider, const std::string& mod
 
 AssistantTurn stream_completion(const ModelSpec& spec, const LlmRequest& request,
                                 const TextCallback& on_text, const std::atomic<bool>* cancel,
-                                long long timeout_ms = 0);  // 0 = no timeout
+                                long long timeout_ms = 0); // 0 = no timeout
 
 std::vector<std::string> known_providers();
 bool provider_is_anthropic(const std::string& provider);
@@ -72,17 +72,15 @@ std::vector<std::string> fetch_models(const ModelSpec& spec, std::string* error,
 
 // Canonical AgentMessage helpers, shared by the agent loop and session replay.
 Json make_user_message(const std::string& text);
-Json make_user_message_with_images(const std::string& text, const std::vector<std::pair<std::string, std::string>>& images);
+Json make_user_message_with_images(const std::string& text,
+                                   const std::vector<std::pair<std::string, std::string>>& images);
 Json make_assistant_message(const AssistantTurn& turn);
 Json make_tool_result_message(const std::string& call_id, const std::string& tool_name,
                               const std::string& text, bool is_error);
-Json make_tool_result_message_extended(const std::string& call_id,
-                                       const std::string& tool_name,
-                                       const Json& content,
-                                       bool is_error,
-                                       const Json* details = nullptr,
-                                       const Json* usage = nullptr,
+Json make_tool_result_message_extended(const std::string& call_id, const std::string& tool_name,
+                                       const Json& content, bool is_error,
+                                       const Json* details = nullptr, const Json* usage = nullptr,
                                        long long duration_ms = -1);
 std::string message_text(const Json& message);
 
-}  // namespace karta
+} // namespace karta

@@ -13,7 +13,7 @@ struct CliOptions {
   std::string system_prompt;
   std::vector<std::string> append_system_prompt;
   std::string thinking = "low"; // 0 off, 1 default/low, 2 medium, 3 high
-  std::string mode = "text";  // text | json | rpc
+  std::string mode = "text";    // text | json | rpc
 
   std::string session_path;
   std::string session_id;
@@ -54,4 +54,4 @@ CliOptions parse_args(int argc, char** argv);
 void print_help();
 int run_cli(const CliOptions& options);
 
-}  // namespace karta
+} // namespace karta

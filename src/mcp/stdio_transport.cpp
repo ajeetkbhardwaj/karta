@@ -8,8 +8,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include <cstdlib>
 #include <chrono>
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <mutex>
@@ -21,24 +21,19 @@ namespace karta::mcp {
 namespace {
 
 class LineReader {
- public:
+public:
   using MessageCallback = std::function<void(const std::string&)>;
   using ErrorCallback = std::function<void(const std::string&)>;
 
-  LineReader(size_t maxMessageBytes, size_t maxStderrBytes,
-             MessageCallback onMessage, ErrorCallback onError,
-             ErrorCallback onStderr)
-      : maxMessageBytes_(maxMessageBytes),
-        maxStderrBytes_(maxStderrBytes),
-        onMessage_(std::move(onMessage)),
-        onError_(std::move(onError)),
+  LineReader(size_t maxMessageBytes, size_t maxStderrBytes, MessageCallback onMessage,
+             ErrorCallback onError, ErrorCallback onStderr)
+      : maxMessageBytes_(maxMessageBytes), maxStderrBytes_(maxStderrBytes),
+        onMessage_(std::move(onMessage)), onError_(std::move(onError)),
         onStderr_(std::move(onStderr)) {}
 
   void feedStdout(const char* data, size_t len) {
     stdoutBuffer_.append(data, len);
-    processBuffer(stdoutBuffer_, [this](const std::string& line) {
-      onMessage_(line);
-    });
+    processBuffer(stdoutBuffer_, [this](const std::string& line) { onMessage_(line); });
   }
 
   void feedStderr(const char* data, size_t len) {
@@ -63,7 +58,7 @@ class LineReader {
 
   const std::string& stderr() const { return stderrBuffer_; }
 
- private:
+private:
   void processBuffer(std::string& buffer, std::function<void(const std::string&)> handler) {
     size_t pos = 0;
     while ((pos = buffer.find('\n')) != std::string::npos) {
@@ -85,59 +80,57 @@ class LineReader {
   ErrorCallback onStderr_;
 };
 
-}  // namespace
+} // namespace
 
 class StdioTransportImpl : public McpTransport {
- public:
+public:
   explicit StdioTransportImpl(StdioTransportOptions options)
-      : options_(std::move(options)),
-        childPid_(-1),
-        stdinFd_(-1),
-        stdoutFd_(-1),
-        stderrFd_(-1),
-        lineReader_(options_.maxMessageBytes,
-                    options_.maxStderrBytes,
-                    [this](const std::string& line) {
-                      try {
-                        Json json = Json::parse(line);
-                        JsonRpcMessage msg;
-                        if ((json["id"].is_number() || json["id"].is_string()) && json["method"].is_string()) {
-                          msg = JsonRpcRequest{
-                              .jsonrpc = json["jsonrpc"].as_string(),
-                              .id = json["id"].is_number() ? JsonRpcId(json["id"].as_int()) : JsonRpcId(json["id"].as_string()),
-                              .method = json["method"].as_string(),
-                              .params = json["params"]};
-                        } else {
-                          std::optional<JsonRpcResponse::Error> err;
-                          if (json["error"].is_object()) {
-                            err = JsonRpcResponse::Error{
-                                .code = static_cast<int>(json["error"]["code"].as_int()),
-                                .message = json["error"]["message"].as_string(),
-                                .data = json["error"]["data"]};
-                          }
-                          msg = JsonRpcResponse{
-                              .jsonrpc = json["jsonrpc"].as_string(),
-                              .id = json["id"].is_number() ? JsonRpcId(json["id"].as_int()) : JsonRpcId(json["id"].as_string()),
-                              .result = json["result"],
-                              .error = json["error"].is_object() ? std::optional<JsonRpcResponse::Error>(
-                                  JsonRpcResponse::Error{
-                                      .code = static_cast<int>(json["error"]["code"].as_int()),
-                                      .message = json["error"]["message"].as_string(),
-                                      .data = json["error"]["data"]})
-                                                                : std::nullopt};
-                        }
-                        if (onMessage) onMessage(msg);
-                      } catch (...) {
-                        // Ignore parse errors
-                      }
-                    },
-                    [this](const std::string& err) {
-                      if (onError) onError(std::runtime_error(err));
-                    },
-                    [this](const std::string& line) {
-                      if (options_.onStderr) options_.onStderr(line);
-                    }) {
-    }
+      : options_(std::move(options)), childPid_(-1), stdinFd_(-1), stdoutFd_(-1), stderrFd_(-1),
+        lineReader_(
+            options_.maxMessageBytes, options_.maxStderrBytes,
+            [this](const std::string& line) {
+              try {
+                Json json = Json::parse(line);
+                JsonRpcMessage msg;
+                if ((json["id"].is_number() || json["id"].is_string()) &&
+                    json["method"].is_string()) {
+                  msg = JsonRpcRequest{.jsonrpc = json["jsonrpc"].as_string(),
+                                       .id = json["id"].is_number()
+                                                 ? JsonRpcId(json["id"].as_int())
+                                                 : JsonRpcId(json["id"].as_string()),
+                                       .method = json["method"].as_string(),
+                                       .params = json["params"]};
+                } else {
+                  std::optional<JsonRpcResponse::Error> err;
+                  if (json["error"].is_object()) {
+                    err = JsonRpcResponse::Error{
+                        .code = static_cast<int>(json["error"]["code"].as_int()),
+                        .message = json["error"]["message"].as_string(),
+                        .data = json["error"]["data"]};
+                  }
+                  msg = JsonRpcResponse{
+                      .jsonrpc = json["jsonrpc"].as_string(),
+                      .id = json["id"].is_number() ? JsonRpcId(json["id"].as_int())
+                                                   : JsonRpcId(json["id"].as_string()),
+                      .result = json["result"],
+                      .error = json["error"].is_object()
+                                   ? std::optional<JsonRpcResponse::Error>(JsonRpcResponse::Error{
+                                         .code = static_cast<int>(json["error"]["code"].as_int()),
+                                         .message = json["error"]["message"].as_string(),
+                                         .data = json["error"]["data"]})
+                                   : std::nullopt};
+                }
+                if (onMessage) onMessage(msg);
+              } catch (...) {
+                // Ignore parse errors
+              }
+            },
+            [this](const std::string& err) {
+              if (onError) onError(std::runtime_error(err));
+            },
+            [this](const std::string& line) {
+              if (options_.onStderr) options_.onStderr(line);
+            }) {}
 
   ~StdioTransportImpl() override {
     if (childPid_ > 0) {
@@ -168,9 +161,12 @@ class StdioTransportImpl : public McpTransport {
 
     childPid_ = fork();
     if (childPid_ < 0) {
-      ::close(stdinPipe[0]); ::close(stdinPipe[1]);
-      ::close(stdoutPipe[0]); ::close(stdoutPipe[1]);
-      ::close(stderrPipe[0]); ::close(stderrPipe[1]);
+      ::close(stdinPipe[0]);
+      ::close(stdinPipe[1]);
+      ::close(stdoutPipe[0]);
+      ::close(stdoutPipe[1]);
+      ::close(stderrPipe[0]);
+      ::close(stderrPipe[1]);
       throw std::runtime_error("Failed to fork process");
     }
 
@@ -179,9 +175,12 @@ class StdioTransportImpl : public McpTransport {
       dup2(stdoutPipe[1], STDOUT_FILENO);
       dup2(stderrPipe[1], STDERR_FILENO);
 
-      ::close(stdinPipe[0]); ::close(stdinPipe[1]);
-      ::close(stdoutPipe[0]); ::close(stdoutPipe[1]);
-      ::close(stderrPipe[0]); ::close(stderrPipe[1]);
+      ::close(stdinPipe[0]);
+      ::close(stdinPipe[1]);
+      ::close(stdoutPipe[0]);
+      ::close(stdoutPipe[1]);
+      ::close(stderrPipe[0]);
+      ::close(stderrPipe[1]);
 
       if (!options_.cwd.empty()) {
         chdir(options_.cwd.c_str());
@@ -290,7 +289,7 @@ class StdioTransportImpl : public McpTransport {
   int pid() const { return childPid_; }
   const std::string& stderr() const { return stderrBuffer_; }
 
- private:
+private:
   void readerLoop() {
     char buffer[4096];
     while (!closed_) {
@@ -329,4 +328,4 @@ std::unique_ptr<McpTransport> createStdioTransport(const StdioTransportOptions& 
   return std::make_unique<StdioTransportImpl>(options);
 }
 
-}  // namespace karta::mcp
+} // namespace karta::mcp

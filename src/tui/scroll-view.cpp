@@ -65,4 +65,4 @@ std::vector<std::string> ScrollView::render(size_t width, size_t height) const {
   return result;
 }
 
-}  // namespace karta::tui
+} // namespace karta::tui

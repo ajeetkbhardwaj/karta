@@ -33,8 +33,10 @@ static bool run_silent(const std::string& cmd) {
 static std::string shell_single_quote(const std::string& text) {
   std::string out = "'";
   for (char c : text) {
-    if (c == '\'') out += "'\\''";
-    else out += c;
+    if (c == '\'')
+      out += "'\\''";
+    else
+      out += c;
   }
   out += "'";
   return out;
@@ -65,7 +67,7 @@ bool clipboard_copy(const std::string& text) {
 
 std::string clipboard_paste() {
   if (!has_display()) return "";
-  
+
   // Try xclip first (Linux X11)
   if (run_silent("which xclip >/dev/null 2>&1")) {
     return exec_cmd("xclip -selection clipboard -o 2>/dev/null");
@@ -86,4 +88,4 @@ std::string clipboard_paste() {
   return "";
 }
 
-}  // namespace karta::tui
+} // namespace karta::tui

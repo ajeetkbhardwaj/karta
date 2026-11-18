@@ -48,15 +48,22 @@ jobs:
       - name: Configure
         shell: bash
         run: |
-          extra=""
+          extra=()
           if [ "$RUNNER_OS" = "macOS" ]; then
-            extra="-DOPENSSL_ROOT_DIR=$(brew --prefix openssl@3)"
+            extra+=("-DOPENSSL_ROOT_DIR=$(brew --prefix openssl@3)")
+          elif [ "$RUNNER_OS" = "Windows" ]; then
+            for candidate in "/c/Program Files/OpenSSL-Win64" "/c/Program Files/OpenSSL"; do
+              if [ -d "$candidate" ]; then
+                extra+=("-DOPENSSL_ROOT_DIR=$(cygpath -w "$candidate")")
+                break
+              fi
+            done
           fi
           cmake -S . -B build \
             -DCMAKE_BUILD_TYPE=Release \
             -DKARTA_BUILD_TUI=${{ matrix.tui }} \
             -DKARTA_BUILD_TESTS=ON \
-            $extra
+            "${extra[@]}"
 
       - name: Build
         run: cmake --build build --config Release -j4

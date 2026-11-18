@@ -8,10 +8,10 @@ namespace karta {
 
 struct ProcessResult {
   int exit_code = -1;
-  std::string output;            // Head-truncated combined stdout/stderr.
+  std::string output; // Head-truncated combined stdout/stderr.
   bool timed_out = false;
   bool truncated = false;
-  std::string full_output_path;  // Set when output was truncated.
+  std::string full_output_path; // Set when output was truncated.
 };
 
 // Runs `command` through the platform shell in `cwd`, capturing stdout+stderr.
@@ -28,4 +28,4 @@ void enable_utf8_console();
 bool stdout_is_tty();
 bool stdin_is_tty();
 
-}  // namespace karta
+} // namespace karta

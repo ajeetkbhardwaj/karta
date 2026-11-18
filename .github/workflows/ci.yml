@@ -47,15 +47,31 @@ jobs:
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install openssl ncurses cmake
+          brew install openssl@3 ncurses cmake pkg-config
 
       - name: Install dependencies (Windows)
         if: runner.os == 'Windows'
         run: |
-          choco install cmake openssl pdcurses --no-progress
+          choco install cmake openssl --no-progress
 
-      - name: Configure
-        run: cmake -S . -B build -DKARTA_BUILD_TUI=${{ matrix.tui }} -DKARTA_BUILD_TESTS=ON
+      - name: Configure (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          extra=""
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            extra="-DOPENSSL_ROOT_DIR=$(brew --prefix openssl@3)"
+          fi
+          cmake -S . -B build -DKARTA_BUILD_TUI=${{ matrix.tui }} -DKARTA_BUILD_TESTS=ON $extra
+
+      - name: Configure (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $root = @("C:\Program Files\OpenSSL-Win64", "C:\Program Files\OpenSSL") |
+            Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $root) { throw "OpenSSL not found" }
+          cmake -S . -B build -DKARTA_BUILD_TUI=${{ matrix.tui }} -DKARTA_BUILD_TESTS=ON -DOPENSSL_ROOT_DIR="$root"
 
       - name: Build
         run: cmake --build build --config Release -j4
@@ -75,6 +91,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install clang-format
+        run: pip install clang-format==18.1.8
       - name: Run clang-format check
         run: |
           find . -name '*.cpp' -o -name '*.h' -o -name '*.hpp' | xargs clang-format --dry-run --Werror
@@ -85,6 +106,11 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install clang-format
+        run: pip install clang-format==18.1.8
       - name: Run clang-format
         run: |
           find . -name '*.cpp' -o -name '*.h' -o -name '*.hpp' | xargs clang-format -i

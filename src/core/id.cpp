@@ -37,16 +37,16 @@ std::string render_hex(std::array<std::uint8_t, kUuidByteCount> bytes) {
   return out;
 }
 
-}  // namespace
+} // namespace
 
 std::string uuidv7() {
   // 40-bit clock sequence, 12 bits.
   // pi-ai: sequence >>= 12 etc. Build the raw bytes so the serial dump is
   // exactly what the reference would emit for the chosen timestamp.
-  const std::uint64_t timestamp_ms = static_cast<std::uint64_t>(
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-          std::chrono::system_clock::now().time_since_epoch())
-          .count());
+  const std::uint64_t timestamp_ms =
+      static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                                     std::chrono::system_clock::now().time_since_epoch())
+                                     .count());
   std::uint64_t sequence = static_cast<std::uint64_t>(rng()()) & 0x0000000000000fffULL;
 
   std::array<std::uint8_t, kUuidByteCount> bytes{};
@@ -107,5 +107,5 @@ std::string session_id() {
   return out;
 }
 
-}  // namespace Id
-}  // namespace karta
+} // namespace Id
+} // namespace karta

@@ -11,9 +11,9 @@
 #include <cstdlib>
 
 #include "karta/agent/agent.h"
+#include "karta/ai/provider.h"
 #include "karta/core/auth.h"
 #include "karta/core/json.h"
-#include "karta/ai/provider.h"
 #include "karta/session/session.h"
 #include "karta/tui/app.h"
 #include "karta/tui/screen.h"
@@ -21,9 +21,7 @@
 namespace karta::tui {
 
 ModelPicker::ModelPicker(AgentOptions* agent_options, Session* session)
-    : agent_options_(agent_options),
-      session_(session),
-      job_state_(JobState::Idle) {}
+    : agent_options_(agent_options), session_(session), job_state_(JobState::Idle) {}
 
 bool ModelPicker::can_pick() const {
   const std::string provider = agent_options_->model.provider;
@@ -54,8 +52,7 @@ void ModelPicker::fetch_models_(const ModelSpec& spec) {
     return;
   }
   job_error_ = error;
-  job_state_ = (error.empty() && !job_models_.empty()) ? JobState::Fetched
-                                                      : JobState::Failed;
+  job_state_ = (error.empty() && !job_models_.empty()) ? JobState::Fetched : JobState::Failed;
 }
 
 void ModelPicker::update(Session& session) {
@@ -104,12 +101,11 @@ void ModelPicker::update(Session& session) {
   }
   if (job_models_.size() > visible) {
     app_->append_text("  … " + std::to_string(job_models_.size() - visible) +
-                      " more (type /model <id>)",
+                          " more (type /model <id>)",
                       Style::Dim);
   }
 
-  const std::string catalog = job_models_.empty() ? std::string("unknown")
-                                                  : job_models_[0];
+  const std::string catalog = job_models_.empty() ? std::string("unknown") : job_models_[0];
   app_->append_text("Available models for " + catalog + " →", Style::Bold);
   app_->set_prompt("model #> ");
   app_->set_status("select a model", false);
@@ -137,4 +133,4 @@ void ModelPicker::apply_selected_model_() {
   app_->set_status("ready · /login · /model", false);
 }
 
-}  // namespace karta::tui
+} // namespace karta::tui

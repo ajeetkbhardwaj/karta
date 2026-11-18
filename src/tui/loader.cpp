@@ -21,4 +21,4 @@ std::vector<std::string> Loader::render(size_t width) const {
   return Text::render(width);
 }
 
-}  // namespace karta::tui
+} // namespace karta::tui

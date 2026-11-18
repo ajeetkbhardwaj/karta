@@ -1,13 +1,13 @@
 // Karta — ScrollView component (mirrors pi packages/tui/src/components/scroll-view.ts).
 #pragma once
 
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace karta::tui {
 
 class ScrollView {
- public:
+public:
   ScrollView();
   void set_content(const std::vector<std::string>& lines);
   void scroll_by(int delta);
@@ -18,11 +18,11 @@ class ScrollView {
   size_t scroll_top() const { return scroll_top_; }
   bool is_following_end() const { return following_end_; }
 
- private:
+private:
   std::vector<std::string> content_;
   size_t scroll_top_ = 0;
   size_t viewport_height_ = 0;
   bool following_end_ = true;
 };
 
-}  // namespace karta::tui
+} // namespace karta::tui

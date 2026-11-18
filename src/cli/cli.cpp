@@ -14,12 +14,12 @@
 #include <thread>
 
 #include "karta/agent/agent.h"
-#include "karta/core/auth.h"
-#include "karta/core/json.h"
-#include "karta/mcp/mcp.h"
-#include "karta/core/platform.h"
 #include "karta/agent/prompt.h"
 #include "karta/ai/provider.h"
+#include "karta/core/auth.h"
+#include "karta/core/json.h"
+#include "karta/core/platform.h"
+#include "karta/mcp/mcp.h"
 #include "karta/session/session.h"
 #include "karta/tools/tools.h"
 
@@ -76,7 +76,7 @@ std::string first_line(const std::string& text, std::size_t limit) {
 }
 
 class Printer {
- public:
+public:
   Printer(const CliOptions& options, bool interactive)
       : options_(options), interactive_(interactive) {}
 
@@ -94,7 +94,7 @@ class Printer {
     std::cout << "Ctrl+C cancels a turn · /exit quits · /session shows the session file\n";
   }
 
- private:
+private:
   void text_event(const AgentEvent& event) {
     if (event.type == "message_update") {
       std::cout << event.payload["delta"].as_string() << std::flush;
@@ -110,8 +110,9 @@ class Printer {
     } else if (event.type == "error") {
       std::cerr << "\nerror: " << event.payload["message"].as_string() << "\n";
     } else if (event.type == "compaction") {
-      if (interactive_) std::cerr << "\n[compacted conversation: " << event.payload["tokensBefore"].as_int(0)
-                                  << " tokens]\n";
+      if (interactive_)
+        std::cerr << "\n[compacted conversation: " << event.payload["tokensBefore"].as_int(0)
+                  << " tokens]\n";
     } else if (event.type == "compaction_failed") {
       std::cerr << "\n[compaction failed: " << event.payload["message"].as_string() << "]\n";
     }
@@ -130,7 +131,8 @@ class Printer {
     } else if (event.type == "error" || event.type == "compaction_failed") {
       out.set("message", event.payload["message"]);
     } else if (event.payload.is_object()) {
-      for (const auto& field : event.payload.fields()) out.set(field.first, field.second);
+      for (const auto& field : event.payload.fields())
+        out.set(field.first, field.second);
     }
     std::cout << out.dump() << "\n";
     std::cout.flush();
@@ -146,47 +148,49 @@ std::string version_string() {
   return out.str();
 }
 
-}  // namespace
+} // namespace
 
 void print_help() {
-  std::cout <<
-      "karta " << kVersion << " — a coding agent (C++ port of pi)\n\n"
-      "Usage: karta [options] [prompt]\n\n"
-      "Running karta with no prompt opens the terminal UI. Use /login to connect a\n"
-      "provider with an API key and /model to pick from that provider's models.\n\n"
-      "Options:\n"
-      "  --provider <name>              Provider: anthropic, openai, openrouter, groq,\n"
-      "                                 deepseek, xai, mistral, nvidia, ollama, lmstudio\n"
-      "  --model <pattern>              Model id, or \"provider/model\"\n"
-      "  --api-key <key>                API key (defaults to the provider's env var)\n"
-      "  --system-prompt <text>         Replace the default system prompt\n"
-      "  --append-system-prompt <text>  Append to the system prompt (repeatable)\n"
-      "  --mode <mode>                  Output: text (default), json, or rpc\n"
-      "  -p, --print                    Non-interactive: run the prompt and exit\n"
-      "  --tui                          Force the terminal UI (default on a TTY)\n"
-      "  -c, --continue                 Continue the most recent session for this directory\n"
-      "  --session <path>               Open a session by file path\n"
-      "  --session-id <id>              Use or create a session with this id\n"
-      "  --fork <path>                  Fork a session into this directory\n"
-      "  --session-dir <dir>            Session storage directory\n"
-      "  --no-session                   Do not persist the session\n"
-      "  -n, --name <name>              Session display name\n"
-      "  -t, --tools <list>             Comma-separated tool allowlist (supports *)\n"
-      "  -xt, --exclude-tools <list>    Comma-separated tool denylist\n"
-      "  -nt, --no-tools                Disable all tools\n"
-      "  -nbt, --no-builtin-tools       Disable built-in tools\n"
-      "  --thinking <level>             0 off, 1 default/low, 2 medium, 3 high\n"
-      "  --max-turns <n>                Stop after n model turns (0 = unlimited)\n"
-      "  --compact-threshold <tokens>   Auto-compact above this estimate (0 = off)\n"
-      "  --list-models                  Show providers and default models\n"
-      "  --verbose                      Print session and model details\n"
-      "  -v, --version                  Print the version\n"
-      "  -h, --help                     Print this help\n\n"
-      "Environment:\n"
-      "  ANTHROPIC_API_KEY, OPENAI_API_KEY, OPENROUTER_API_KEY, GROQ_API_KEY,\n"
-      "  DEEPSEEK_API_KEY, XAI_API_KEY, MISTRAL_API_KEY, NVIDIA_API_KEY, or KARTA_API_KEY\n"
-      "  KARTA_BASE_URL, KARTA_MODEL, KARTA_MAX_TOKENS, KARTA_THINKING\n\n"
-      "Credentials entered with /login are stored in " << auth_file_path() << " (0600).\n";
+  std::cout
+      << "karta " << kVersion
+      << " — a coding agent (C++ port of pi)\n\n"
+         "Usage: karta [options] [prompt]\n\n"
+         "Running karta with no prompt opens the terminal UI. Use /login to connect a\n"
+         "provider with an API key and /model to pick from that provider's models.\n\n"
+         "Options:\n"
+         "  --provider <name>              Provider: anthropic, openai, openrouter, groq,\n"
+         "                                 deepseek, xai, mistral, nvidia, ollama, lmstudio\n"
+         "  --model <pattern>              Model id, or \"provider/model\"\n"
+         "  --api-key <key>                API key (defaults to the provider's env var)\n"
+         "  --system-prompt <text>         Replace the default system prompt\n"
+         "  --append-system-prompt <text>  Append to the system prompt (repeatable)\n"
+         "  --mode <mode>                  Output: text (default), json, or rpc\n"
+         "  -p, --print                    Non-interactive: run the prompt and exit\n"
+         "  --tui                          Force the terminal UI (default on a TTY)\n"
+         "  -c, --continue                 Continue the most recent session for this directory\n"
+         "  --session <path>               Open a session by file path\n"
+         "  --session-id <id>              Use or create a session with this id\n"
+         "  --fork <path>                  Fork a session into this directory\n"
+         "  --session-dir <dir>            Session storage directory\n"
+         "  --no-session                   Do not persist the session\n"
+         "  -n, --name <name>              Session display name\n"
+         "  -t, --tools <list>             Comma-separated tool allowlist (supports *)\n"
+         "  -xt, --exclude-tools <list>    Comma-separated tool denylist\n"
+         "  -nt, --no-tools                Disable all tools\n"
+         "  -nbt, --no-builtin-tools       Disable built-in tools\n"
+         "  --thinking <level>             0 off, 1 default/low, 2 medium, 3 high\n"
+         "  --max-turns <n>                Stop after n model turns (0 = unlimited)\n"
+         "  --compact-threshold <tokens>   Auto-compact above this estimate (0 = off)\n"
+         "  --list-models                  Show providers and default models\n"
+         "  --verbose                      Print session and model details\n"
+         "  -v, --version                  Print the version\n"
+         "  -h, --help                     Print this help\n\n"
+         "Environment:\n"
+         "  ANTHROPIC_API_KEY, OPENAI_API_KEY, OPENROUTER_API_KEY, GROQ_API_KEY,\n"
+         "  DEEPSEEK_API_KEY, XAI_API_KEY, MISTRAL_API_KEY, NVIDIA_API_KEY, or KARTA_API_KEY\n"
+         "  KARTA_BASE_URL, KARTA_MODEL, KARTA_MAX_TOKENS, KARTA_THINKING\n\n"
+         "Credentials entered with /login are stored in "
+      << auth_file_path() << " (0600).\n";
 }
 
 CliOptions parse_args(int argc, char** argv) {
@@ -255,9 +259,11 @@ CliOptions parse_args(int argc, char** argv) {
     } else if (arg == "--name" || arg == "-n") {
       options.session_name = need_value(i, arg);
     } else if (arg == "--tools" || arg == "-t") {
-      for (const std::string& tool : split_list(need_value(i, arg))) options.tool_allow.push_back(tool);
+      for (const std::string& tool : split_list(need_value(i, arg)))
+        options.tool_allow.push_back(tool);
     } else if (arg == "--exclude-tools" || arg == "-xt") {
-      for (const std::string& tool : split_list(need_value(i, arg))) options.tool_exclude.push_back(tool);
+      for (const std::string& tool : split_list(need_value(i, arg)))
+        options.tool_exclude.push_back(tool);
     } else if (arg == "--no-tools" || arg == "-nt") {
       options.no_tools = true;
     } else if (arg == "--no-builtin-tools" || arg == "-nbt") {
@@ -421,7 +427,8 @@ int run_cli(const CliOptions& options) {
       }
       session = Session::create(cwd, directory, options.session_name, &error, "", source->path());
       if (session) {
-        for (const Json& message : source->record().messages) session->append_message(message);
+        for (const Json& message : source->record().messages)
+          session->append_message(message);
       }
     } else if (!options.session_id.empty()) {
       const std::string existing = Session::find_by_id(options.session_id, directory);
@@ -446,7 +453,8 @@ int run_cli(const CliOptions& options) {
     spec = resolve_model_spec(provider, model, options.api_key);
     spec.thinking = options.thinking;
   }
-  if (session && (session->record().provider != spec.provider || session->record().model != spec.model)) {
+  if (session &&
+      (session->record().provider != spec.provider || session->record().model != spec.model)) {
     session->append_model_change(spec.provider, spec.model);
   }
 
@@ -480,32 +488,29 @@ int run_cli(const CliOptions& options) {
 #endif
 
   Printer printer(options, interactive);
-  const std::string model_label = spec.model.rfind(spec.provider + "/", 0) == 0
-                                      ? spec.model
-                                      : spec.provider + "/" + spec.model;
+  const std::string model_label =
+      spec.model.rfind(spec.provider + "/", 0) == 0 ? spec.model : spec.provider + "/" + spec.model;
   printer.banner(model_label, cwd);
   if (options.verbose) {
-    std::cerr << "karta: model=" << spec.provider << "/" << spec.model
-              << " tools=" << tools.size() << " session="
-              << (session ? session->path() : std::string("(ephemeral)")) << "\n";
+    std::cerr << "karta: model=" << spec.provider << "/" << spec.model << " tools=" << tools.size()
+              << " session=" << (session ? session->path() : std::string("(ephemeral)")) << "\n";
   }
   if (spec.api_key.empty() && spec.provider != "ollama" && spec.provider != "lmstudio") {
     std::cerr << "warning: no API key found for " << spec.provider
               << "; set the provider's env var or pass --api-key\n";
   }
 
-  Agent agent(
-      agent_options, [&](const AgentEvent& event) {
-        if (event.type == "message_end") {
-          if (session) session->append_message(event.payload);
-        } else if (event.type == "compaction") {
-          if (session) {
-            session->append_compaction(event.payload["summary"].as_string(),
-                                       event.payload["tokensBefore"].as_int(0));
-          }
-        }
-        printer.event(event);
-      });
+  Agent agent(agent_options, [&](const AgentEvent& event) {
+    if (event.type == "message_end") {
+      if (session) session->append_message(event.payload);
+    } else if (event.type == "compaction") {
+      if (session) {
+        session->append_compaction(event.payload["summary"].as_string(),
+                                   event.payload["tokensBefore"].as_int(0));
+      }
+    }
+    printer.event(event);
+  });
 
   if (session) {
     agent.set_messages(session->record().messages);
@@ -598,4 +603,4 @@ int run_cli(const CliOptions& options) {
   return status;
 }
 
-}  // namespace karta
+} // namespace karta

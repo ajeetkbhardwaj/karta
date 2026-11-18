@@ -38,7 +38,8 @@ void Editor::kill_ring_next() {
 
 void Editor::kill_ring_prev() {
   if (kill_ring_.empty()) return;
-  kill_ring_idx_ = (kill_ring_idx_ - 1 + static_cast<int>(kill_ring_.size())) % static_cast<int>(kill_ring_.size());
+  kill_ring_idx_ = (kill_ring_idx_ - 1 + static_cast<int>(kill_ring_.size())) %
+                   static_cast<int>(kill_ring_.size());
 }
 
 void Editor::push_kill_ring(const std::string& text) {
@@ -104,8 +105,10 @@ void Editor::kill_word_backward() {
     return;
   }
   std::size_t begin = static_cast<std::size_t>(cursor_col_);
-  while (begin > 0 && line[begin - 1] == ' ') --begin;
-  while (begin > 0 && line[begin - 1] != ' ') --begin;
+  while (begin > 0 && line[begin - 1] == ' ')
+    --begin;
+  while (begin > 0 && line[begin - 1] != ' ')
+    --begin;
   std::string killed = line.substr(begin, static_cast<std::size_t>(cursor_col_) - begin);
   push_kill_ring(killed);
   line.erase(begin, static_cast<std::size_t>(cursor_col_) - begin);
@@ -253,7 +256,8 @@ void Editor::delete_char() {
   undo_stack_.push_back(text());
   redo_stack_.clear();
 
-  if (cursor_line_ >= 0 && cursor_line_ < static_cast<int>(lines_.size()) && cursor_col_ < static_cast<int>(lines_[cursor_line_].size())) {
+  if (cursor_line_ >= 0 && cursor_line_ < static_cast<int>(lines_.size()) &&
+      cursor_col_ < static_cast<int>(lines_[cursor_line_].size())) {
     lines_[cursor_line_].erase(cursor_col_, 1);
     update_cursor_pos();
   } else if (cursor_line_ + 1 < static_cast<int>(lines_.size())) {
@@ -276,7 +280,8 @@ void Editor::move_left() {
 
 void Editor::move_right() {
   end_edit_group();
-  if (cursor_line_ >= 0 && cursor_line_ < static_cast<int>(lines_.size()) && cursor_col_ < static_cast<int>(lines_[cursor_line_].size())) {
+  if (cursor_line_ >= 0 && cursor_line_ < static_cast<int>(lines_.size()) &&
+      cursor_col_ < static_cast<int>(lines_[cursor_line_].size())) {
     ++cursor_col_;
   } else if (cursor_line_ + 1 < static_cast<int>(lines_.size())) {
     ++cursor_line_;
@@ -355,7 +360,7 @@ size_t display_width(const std::string& text) {
   }
   return width;
 }
-}  // namespace
+} // namespace
 
 std::vector<std::string> Editor::render(size_t width) const {
   std::vector<std::string> result;
@@ -408,4 +413,4 @@ std::pair<int, int> Editor::cursor_screen_pos(size_t width) const {
   return {screen_row, screen_col};
 }
 
-}  // namespace karta::tui
+} // namespace karta::tui

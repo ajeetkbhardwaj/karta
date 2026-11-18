@@ -13,4 +13,4 @@ bool clipboard_copy(const std::string& text);
 // Returns empty string on failure or if clipboard is empty.
 std::string clipboard_paste();
 
-}  // namespace karta::tui
+} // namespace karta::tui

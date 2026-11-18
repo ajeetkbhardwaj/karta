@@ -32,14 +32,16 @@ std::string lower_ascii(std::string value) {
 
 Json jsonFromRpcId(const JsonRpcId& id) {
   Json out = Json::object();
-  std::visit([&](const auto& value) {
-    using T = std::decay_t<decltype(value)>;
-    if constexpr (std::is_same_v<T, int64_t>) {
-      out = Json(static_cast<long long>(value));
-    } else {
-      out = Json(std::string(value));
-    }
-  }, id);
+  std::visit(
+      [&](const auto& value) {
+        using T = std::decay_t<decltype(value)>;
+        if constexpr (std::is_same_v<T, int64_t>) {
+          out = Json(static_cast<long long>(value));
+        } else {
+          out = Json(std::string(value));
+        }
+      },
+      id);
   return out;
 }
 
@@ -71,7 +73,8 @@ bool isJsonRpcLike(const Json& json) {
   return (json["id"].is_number() || json["id"].is_string());
 }
 
-void handleJsonRpcPayload(const Json& responseJson, const std::function<void(const JsonRpcMessage&)>& onMessage) {
+void handleJsonRpcPayload(const Json& responseJson,
+                          const std::function<void(const JsonRpcMessage&)>& onMessage) {
   if (!isJsonRpcLike(responseJson)) return;
 
   const bool hasId = responseJson["id"].is_number() || responseJson["id"].is_string();
@@ -118,12 +121,11 @@ void handleJsonRpcPayload(const Json& responseJson, const std::function<void(con
   if (onMessage) onMessage(notif);
 }
 
-}  // namespace
+} // namespace
 
 class HttpTransportImpl : public McpTransport {
- public:
-  explicit HttpTransportImpl(HttpTransportOptions options)
-      : options_(std::move(options)) {
+public:
+  explicit HttpTransportImpl(HttpTransportOptions options) : options_(std::move(options)) {
     protocolVersion_ = options_.protocolVersion.value_or("2025-11-25");
   }
 
@@ -166,7 +168,7 @@ class HttpTransportImpl : public McpTransport {
 
   const std::string& sessionId() const { return sessionId_; }
 
- private:
+private:
   struct ParsedUrl {
     std::string scheme;
     std::string host_port;
@@ -250,10 +252,14 @@ class HttpTransportImpl : public McpTransport {
       if (!res) {
         const auto err = res.error();
         std::string err_msg;
-        if (err == httplib::Error::Canceled) err_msg = "aborted";
-        else if (err == httplib::Error::ConnectionTimeout || err == httplib::Error::Read) err_msg = "timeout";
-        else if (err == httplib::Error::SSLConnection) err_msg = "SSL connection failed";
-        else err_msg = httplib::to_string(err);
+        if (err == httplib::Error::Canceled)
+          err_msg = "aborted";
+        else if (err == httplib::Error::ConnectionTimeout || err == httplib::Error::Read)
+          err_msg = "timeout";
+        else if (err == httplib::Error::SSLConnection)
+          err_msg = "SSL connection failed";
+        else
+          err_msg = httplib::to_string(err);
         throw std::runtime_error("HTTP POST failed: " + err_msg);
       }
       if (res->status < 200 || res->status >= 300) {
@@ -281,10 +287,14 @@ class HttpTransportImpl : public McpTransport {
     if (!res) {
       const auto err = res.error();
       std::string err_msg;
-      if (err == httplib::Error::Canceled) err_msg = "aborted";
-      else if (err == httplib::Error::ConnectionTimeout || err == httplib::Error::Read) err_msg = "timeout";
-      else if (err == httplib::Error::SSLConnection) err_msg = "SSL connection failed";
-      else err_msg = httplib::to_string(err);
+      if (err == httplib::Error::Canceled)
+        err_msg = "aborted";
+      else if (err == httplib::Error::ConnectionTimeout || err == httplib::Error::Read)
+        err_msg = "timeout";
+      else if (err == httplib::Error::SSLConnection)
+        err_msg = "SSL connection failed";
+      else
+        err_msg = httplib::to_string(err);
       throw std::runtime_error("HTTP POST failed: " + err_msg);
     }
     if (res->status < 200 || res->status >= 300) {
@@ -312,4 +322,4 @@ std::unique_ptr<McpTransport> createHttpTransport(const HttpTransportOptions& op
   return std::make_unique<HttpTransportImpl>(options);
 }
 
-}  // namespace karta::mcp
+} // namespace karta::mcp

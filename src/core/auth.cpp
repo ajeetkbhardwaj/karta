@@ -55,12 +55,13 @@ bool write_private_file(const std::string& path, const std::string& content) {
 
 bool write_keys(const std::map<std::string, std::string>& keys) {
   Json root = Json::object();
-  for (const auto& entry : keys) root.set(entry.first, entry.second);
+  for (const auto& entry : keys)
+    root.set(entry.first, entry.second);
 
   std::error_code error;
   std::filesystem::create_directories(auth_directory(), error);
 #ifndef _WIN32
-  ::chmod(auth_directory().c_str(), S_IRWXU);  // 0700
+  ::chmod(auth_directory().c_str(), S_IRWXU); // 0700
 #endif
 
   const std::string target = auth_file_path();
@@ -77,12 +78,12 @@ bool write_keys(const std::map<std::string, std::string>& keys) {
     return false;
   }
 #ifndef _WIN32
-  ::chmod(target.c_str(), S_IRUSR | S_IWUSR);  // 0600
+  ::chmod(target.c_str(), S_IRUSR | S_IWUSR); // 0600
 #endif
   return true;
 }
 
-}  // namespace
+} // namespace
 
 std::string auth_file_path() {
   return (std::filesystem::path(auth_directory()) / "auth.json").string();
@@ -126,4 +127,4 @@ std::string stored_api_key(const std::string& provider) {
   return it == keys.end() ? std::string() : it->second;
 }
 
-}  // namespace karta
+} // namespace karta

@@ -40,7 +40,7 @@ class TelemetryPropagation;
 
 // A timed record of one operation. Lives until the creating context settles it.
 class TelemetrySpan {
- public:
+public:
   virtual ~TelemetrySpan() = default;
   virtual void add_event(const std::string& name,
                          const std::vector<Attribute>& attributes = {}) = 0;
@@ -67,11 +67,10 @@ struct SpanOptions {
 // TelemetryContext starts callback-managed child spans and optionally exposes
 // adapter metrics/propagation.
 class TelemetryContext {
- public:
+public:
   virtual ~TelemetryContext() = default;
 
-  template <typename F>
-  auto start_span(const SpanOptions& options, F&& callback) {
+  template <typename F> auto start_span(const SpanOptions& options, F&& callback) {
     auto span = create_span(options);
     try {
       auto result = callback(*span);
@@ -86,12 +85,12 @@ class TelemetryContext {
   virtual TelemetryMetrics* metrics() { return nullptr; }
   virtual TelemetryPropagation* propagation() { return nullptr; }
 
- protected:
+protected:
   virtual std::shared_ptr<TelemetrySpan> create_span(const SpanOptions& options) = 0;
 };
 
 class TelemetryPropagation {
- public:
+public:
   virtual ~TelemetryPropagation() = default;
   virtual TelemetryCarrier inject(const TelemetryContext& context) = 0;
   virtual std::shared_ptr<TelemetryContext> extract(const TelemetryCarrier& carrier) = 0;
@@ -100,19 +99,19 @@ class TelemetryPropagation {
 extern TelemetryPropagation& NOOP_TELEMETRY_PROPAGATION;
 
 class TelemetryCounter {
- public:
+public:
   virtual ~TelemetryCounter() = default;
   virtual void add(long long value, const std::vector<Attribute>& attributes = {}) = 0;
 };
 
 class TelemetryUpDownCounter {
- public:
+public:
   virtual ~TelemetryUpDownCounter() = default;
   virtual void add(long long value, const std::vector<Attribute>& attributes = {}) = 0;
 };
 
 class TelemetryHistogram {
- public:
+public:
   virtual ~TelemetryHistogram() = default;
   virtual void record(long long value, const std::vector<Attribute>& attributes = {},
                       const TelemetrySpan* exemplar = nullptr) = 0;
@@ -128,14 +127,14 @@ struct HistogramOptions : InstrumentOptions {
 };
 
 class TelemetryMetrics {
- public:
+public:
   virtual ~TelemetryMetrics() = default;
-  virtual std::unique_ptr<TelemetryCounter> counter(
-      const std::string& name, const InstrumentOptions& options = {}) = 0;
-  virtual std::unique_ptr<TelemetryUpDownCounter> up_down_counter(
-      const std::string& name, const InstrumentOptions& options = {}) = 0;
-  virtual std::unique_ptr<TelemetryHistogram> histogram(
-      const std::string& name, const HistogramOptions& options = {}) = 0;
+  virtual std::unique_ptr<TelemetryCounter> counter(const std::string& name,
+                                                    const InstrumentOptions& options = {}) = 0;
+  virtual std::unique_ptr<TelemetryUpDownCounter>
+  up_down_counter(const std::string& name, const InstrumentOptions& options = {}) = 0;
+  virtual std::unique_ptr<TelemetryHistogram> histogram(const std::string& name,
+                                                        const HistogramOptions& options = {}) = 0;
 };
 
 extern TelemetryMetrics& NOOP_TELEMETRY_METRICS;
@@ -215,7 +214,7 @@ struct MetricQuery {
 };
 
 class TelemetryStore {
- public:
+public:
   virtual ~TelemetryStore() = default;
   virtual StoredTrace find_traces(const TraceQuery& query = {}) = 0;
   virtual std::unique_ptr<StoredSpan> get_trace(const std::string& trace_id) = 0;
@@ -232,7 +231,7 @@ class InMemoryTelemetryContext : public TelemetryContext,
                                  public TelemetryStore,
                                  public TelemetryPropagation,
                                  public TelemetryMetrics {
- public:
+public:
   InMemoryTelemetryContext();
   ~InMemoryTelemetryContext() override;
 
@@ -251,15 +250,15 @@ class InMemoryTelemetryContext : public TelemetryContext,
   // TelemetryMetrics
   std::unique_ptr<TelemetryCounter> counter(const std::string& name,
                                             const InstrumentOptions& options = {}) override;
-  std::unique_ptr<TelemetryUpDownCounter> up_down_counter(
-      const std::string& name, const InstrumentOptions& options = {}) override;
-  std::unique_ptr<TelemetryHistogram> histogram(
-      const std::string& name, const HistogramOptions& options = {}) override;
+  std::unique_ptr<TelemetryUpDownCounter>
+  up_down_counter(const std::string& name, const InstrumentOptions& options = {}) override;
+  std::unique_ptr<TelemetryHistogram> histogram(const std::string& name,
+                                                const HistogramOptions& options = {}) override;
 
   std::vector<RecordedTelemetrySpan> get_spans();
   std::vector<RecordedTelemetryMeasurement> get_metrics();
 
- private:
+private:
   class SpanImpl;
   class MetricsImpl;
   class PropagationImpl;
@@ -286,7 +285,7 @@ struct TelemetryEventDefinition {
 };
 
 struct TelemetryParentDefinition {
-  std::string kind;   // "any" | "root_or_external" | "spans"
+  std::string kind; // "any" | "root_or_external" | "spans"
   std::vector<std::string> spans;
 };
 
@@ -308,5 +307,5 @@ inline TelemetrySchemaDefinition define_telemetry_schema(TelemetrySchemaDefiniti
   return schema;
 }
 
-}  // namespace telemetry
-}  // namespace karta
+} // namespace telemetry
+} // namespace karta

@@ -33,7 +33,7 @@ long long now_ms() {
       duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count());
 }
 
-}  // namespace
+} // namespace
 
 // ========================================================================
 // No-op span / context / metrics / propagation
@@ -42,7 +42,7 @@ long long now_ms() {
 namespace {
 
 class NoopSpan : public TelemetrySpan, public std::enable_shared_from_this<NoopSpan> {
- public:
+public:
   void add_event(const std::string&, const std::vector<Attribute>&) override {}
   void set_attributes(const std::vector<Attribute>&) override {}
   void set_status(SpanStatus) override {}
@@ -50,51 +50,49 @@ class NoopSpan : public TelemetrySpan, public std::enable_shared_from_this<NoopS
 };
 
 class NoopContext : public TelemetryContext {
- protected:
+protected:
   std::shared_ptr<TelemetrySpan> create_span(const SpanOptions&) override {
     return std::make_shared<NoopSpan>();
   }
 };
 
 class NoopCounter : public TelemetryCounter {
- public:
+public:
   void add(long long, const std::vector<Attribute>&) override {}
 };
 class NoopUpDownCounter : public TelemetryUpDownCounter {
- public:
+public:
   void add(long long, const std::vector<Attribute>&) override {}
 };
 class NoopHistogram : public TelemetryHistogram {
- public:
-  void record(long long, const std::vector<Attribute>&, const TelemetrySpan*)
-  override {}
+public:
+  void record(long long, const std::vector<Attribute>&, const TelemetrySpan*) override {}
 };
 
 class NoopMetrics : public TelemetryMetrics {
- public:
-  std::unique_ptr<TelemetryCounter> counter(const std::string&,
-                                            const InstrumentOptions&) override {
+public:
+  std::unique_ptr<TelemetryCounter> counter(const std::string&, const InstrumentOptions&) override {
     return std::make_unique<NoopCounter>();
   }
-  std::unique_ptr<TelemetryUpDownCounter> up_down_counter(
-      const std::string&, const InstrumentOptions&) override {
+  std::unique_ptr<TelemetryUpDownCounter> up_down_counter(const std::string&,
+                                                          const InstrumentOptions&) override {
     return std::make_unique<NoopUpDownCounter>();
   }
-  std::unique_ptr<TelemetryHistogram> histogram(
-      const std::string&, const HistogramOptions&) override {
+  std::unique_ptr<TelemetryHistogram> histogram(const std::string&,
+                                                const HistogramOptions&) override {
     return std::make_unique<NoopHistogram>();
   }
 };
 
 class NoopPropagation : public TelemetryPropagation {
- public:
+public:
   TelemetryCarrier inject(const TelemetryContext&) override { return {}; }
   std::shared_ptr<TelemetryContext> extract(const TelemetryCarrier&) override {
     return std::make_shared<NoopContext>();
   }
 };
 
-}  // namespace
+} // namespace
 
 static NoopContext g_noop_context;
 static NoopMetrics g_noop_metrics;
@@ -110,7 +108,7 @@ TelemetryPropagation& NOOP_TELEMETRY_PROPAGATION = g_noop_propagation;
 
 class InMemoryTelemetryContext::SpanImpl : public TelemetrySpan,
                                            public std::enable_shared_from_this<SpanImpl> {
- public:
+public:
   using Event = RecordedTelemetrySpan::Event;
 
   SpanImpl(long long id, const SpanOptions& options, const TelemetryCarrier& parent_context)
@@ -130,8 +128,7 @@ class InMemoryTelemetryContext::SpanImpl : public TelemetrySpan,
     on_settle_ = std::move(fn);
   }
 
-  void add_event(const std::string& name,
-                 const std::vector<Attribute>& attributes) override {
+  void add_event(const std::string& name, const std::vector<Attribute>& attributes) override {
     if (settled_) return;
     Event ev;
     ev.name = name;
@@ -153,8 +150,7 @@ class InMemoryTelemetryContext::SpanImpl : public TelemetrySpan,
     status_ = std::move(status);
   }
 
-  void add_link(const TelemetrySpan& target,
-                const std::vector<Attribute>& attributes) override {
+  void add_link(const TelemetrySpan& target, const std::vector<Attribute>& attributes) override {
     if (settled_) return;
     std::vector<Attribute> copy;
     for (const Attribute& a : attributes) {
@@ -192,8 +188,7 @@ class InMemoryTelemetryContext::SpanImpl : public TelemetrySpan,
   const SpanStatus& status() const { return status_; }
   const std::map<std::string, std::string>& attributes() const { return attrs_; }
   const std::vector<Event>& events() const { return events_; }
-  const std::vector<std::pair<TelemetryCarrier, std::vector<Attribute>>>& links()
-  const {
+  const std::vector<std::pair<TelemetryCarrier, std::vector<Attribute>>>& links() const {
     return links_;
   }
   const TelemetryCarrier& context() const { return context_; }
@@ -202,7 +197,7 @@ class InMemoryTelemetryContext::SpanImpl : public TelemetrySpan,
   // Set by Impl to drive the shared end-sequence counter.
   static long long& end_sequence_ref() { return g_end_sequence; }
 
- private:
+private:
   static long long g_end_sequence;
 
   long long id_;
@@ -222,7 +217,7 @@ class InMemoryTelemetryContext::SpanImpl : public TelemetrySpan,
 long long InMemoryTelemetryContext::SpanImpl::g_end_sequence = 0;
 
 class InMemoryTelemetryContext::Impl {
- public:
+public:
   std::shared_ptr<SpanImpl> create_span(const SpanOptions& options,
                                         const TelemetryCarrier& parent_context) {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -340,12 +335,10 @@ class InMemoryTelemetryContext::Impl {
   std::vector<std::unique_ptr<HistInst>> hists_;
 };
 
-InMemoryTelemetryContext::InMemoryTelemetryContext()
-    : impl_(std::make_unique<Impl>()) {}
+InMemoryTelemetryContext::InMemoryTelemetryContext() : impl_(std::make_unique<Impl>()) {}
 InMemoryTelemetryContext::~InMemoryTelemetryContext() = default;
 
-std::shared_ptr<TelemetrySpan> InMemoryTelemetryContext::create_span(
-    const SpanOptions& options) {
+std::shared_ptr<TelemetrySpan> InMemoryTelemetryContext::create_span(const SpanOptions& options) {
   return impl_->create_span(options, {});
 }
 
@@ -358,39 +351,35 @@ std::vector<RecordedTelemetryMeasurement> InMemoryTelemetryContext::get_metrics(
   std::vector<RecordedTelemetryMeasurement> out;
   for (auto& c : impl_->counters_) {
     std::lock_guard<std::mutex> lock(c->mutex_);
-    for (auto& m : c->measurements) out.push_back(std::move(m));
+    for (auto& m : c->measurements)
+      out.push_back(std::move(m));
   }
   for (auto& u : impl_->updowns_) {
     std::lock_guard<std::mutex> lock(u->mutex_);
-    for (auto& m : u->measurements) out.push_back(std::move(m));
+    for (auto& m : u->measurements)
+      out.push_back(std::move(m));
   }
   for (auto& h : impl_->hists_) {
     std::lock_guard<std::mutex> lock(h->mutex_);
-    for (auto& m : h->measurements) out.push_back(std::move(m));
+    for (auto& m : h->measurements)
+      out.push_back(std::move(m));
   }
   return out;
 }
 
 StoredTrace InMemoryTelemetryContext::find_traces(const TraceQuery&) { return {}; }
-std::unique_ptr<StoredSpan> InMemoryTelemetryContext::get_trace(
-    const std::string&) {
+std::unique_ptr<StoredSpan> InMemoryTelemetryContext::get_trace(const std::string&) {
   return nullptr;
 }
-std::vector<StoredMetric> InMemoryTelemetryContext::find_metrics(
-    const MetricQuery&) {
-  return {};
-}
+std::vector<StoredMetric> InMemoryTelemetryContext::find_metrics(const MetricQuery&) { return {}; }
 
-TelemetryCarrier InMemoryTelemetryContext::inject(const TelemetryContext&) {
-  return {};
-}
-std::shared_ptr<TelemetryContext> InMemoryTelemetryContext::extract(
-    const TelemetryCarrier&) {
+TelemetryCarrier InMemoryTelemetryContext::inject(const TelemetryContext&) { return {}; }
+std::shared_ptr<TelemetryContext> InMemoryTelemetryContext::extract(const TelemetryCarrier&) {
   return std::make_shared<NoopContext>();
 }
 
-std::unique_ptr<TelemetryCounter> InMemoryTelemetryContext::counter(
-    const std::string& name, const InstrumentOptions& options) {
+std::unique_ptr<TelemetryCounter>
+InMemoryTelemetryContext::counter(const std::string& name, const InstrumentOptions& options) {
   std::lock_guard<std::mutex> lock(impl_->mutex_);
   auto inst = std::make_unique<Impl::CounterInst>();
   inst->name = name;
@@ -401,8 +390,9 @@ std::unique_ptr<TelemetryCounter> InMemoryTelemetryContext::counter(
   return std::unique_ptr<TelemetryCounter>(raw);
 }
 
-std::unique_ptr<TelemetryUpDownCounter> InMemoryTelemetryContext::up_down_counter(
-    const std::string& name, const InstrumentOptions& options) {
+std::unique_ptr<TelemetryUpDownCounter>
+InMemoryTelemetryContext::up_down_counter(const std::string& name,
+                                          const InstrumentOptions& options) {
   std::lock_guard<std::mutex> lock(impl_->mutex_);
   auto inst = std::make_unique<Impl::UpDownInst>();
   inst->name = name;
@@ -413,8 +403,8 @@ std::unique_ptr<TelemetryUpDownCounter> InMemoryTelemetryContext::up_down_counte
   return std::unique_ptr<TelemetryUpDownCounter>(raw);
 }
 
-std::unique_ptr<TelemetryHistogram> InMemoryTelemetryContext::histogram(
-    const std::string& name, const HistogramOptions& options) {
+std::unique_ptr<TelemetryHistogram>
+InMemoryTelemetryContext::histogram(const std::string& name, const HistogramOptions& options) {
   std::lock_guard<std::mutex> lock(impl_->mutex_);
   auto inst = std::make_unique<Impl::HistInst>();
   inst->name = name;
@@ -426,5 +416,5 @@ std::unique_ptr<TelemetryHistogram> InMemoryTelemetryContext::histogram(
   return std::unique_ptr<TelemetryHistogram>(raw);
 }
 
-}  // namespace telemetry
-}  // namespace karta
+} // namespace telemetry
+} // namespace karta

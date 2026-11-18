@@ -34,7 +34,8 @@ static std::vector<MarkdownRender> render_inline(const std::string& text) {
     if (pos + 1 < remaining.size() && remaining[pos] == '*' && remaining[pos + 1] == '*') {
       std::size_t end = remaining.find("**", pos + 2);
       if (end != std::string::npos) {
-        renders.push_back({MarkdownRender::NodeType::Bold, remaining.substr(pos + 2, end - pos - 2)});
+        renders.push_back(
+            {MarkdownRender::NodeType::Bold, remaining.substr(pos + 2, end - pos - 2)});
         pos = end + 2;
         continue;
       }
@@ -44,7 +45,8 @@ static std::vector<MarkdownRender> render_inline(const std::string& text) {
     if (pos + 1 < remaining.size() && remaining[pos] == '*' && remaining[pos + 1] != '*') {
       std::size_t end = remaining.find("*", pos + 1);
       if (end != std::string::npos) {
-        renders.push_back({MarkdownRender::NodeType::Italic, remaining.substr(pos + 1, end - pos - 1)});
+        renders.push_back(
+            {MarkdownRender::NodeType::Italic, remaining.substr(pos + 1, end - pos - 1)});
         pos = end + 1;
         continue;
       }
@@ -54,7 +56,8 @@ static std::vector<MarkdownRender> render_inline(const std::string& text) {
     if (remaining[pos] == '`') {
       std::size_t end = remaining.find('`', pos + 1);
       if (end != std::string::npos) {
-        renders.push_back({MarkdownRender::NodeType::Code, remaining.substr(pos + 1, end - pos - 1)});
+        renders.push_back(
+            {MarkdownRender::NodeType::Code, remaining.substr(pos + 1, end - pos - 1)});
         pos = end + 1;
         continue;
       }
@@ -70,7 +73,8 @@ static std::vector<MarkdownRender> render_inline(const std::string& text) {
           if (close_paren != std::string::npos) {
             std::string label = remaining.substr(pos + 2, bracket_end - pos - 2);
             std::string url = remaining.substr(paren + 1, close_paren - paren - 1);
-            renders.push_back({MarkdownRender::NodeType::Text, "[image: " + (label.empty() ? url : label) + "]"});
+            renders.push_back(
+                {MarkdownRender::NodeType::Text, "[image: " + (label.empty() ? url : label) + "]"});
             pos = close_paren + 1;
             continue;
           }
@@ -100,7 +104,7 @@ static std::vector<MarkdownRender> render_inline(const std::string& text) {
     std::size_t next_mark = remaining.size();
     std::size_t next_newline = remaining.find('\n', pos);
     if (next_newline != std::string::npos) next_mark = next_newline;
-    
+
     // Find next markdown marker
     for (std::size_t p = pos; p < next_mark; ++p) {
       // Check for ** (bold)
@@ -129,7 +133,7 @@ static std::vector<MarkdownRender> render_inline(const std::string& text) {
         break;
       }
     }
-    
+
     if (next_mark > pos) {
       renders.push_back({MarkdownRender::NodeType::Text, remaining.substr(pos, next_mark - pos)});
       pos = next_mark;
@@ -142,7 +146,7 @@ static std::vector<MarkdownRender> render_inline(const std::string& text) {
 }
 
 std::vector<MarkdownRender> render_markdown(const std::string& text, std::size_t width) {
-  (void)width;  // width used for future wrapping
+  (void)width; // width used for future wrapping
   std::vector<MarkdownRender> result;
 
   // Split into lines first
@@ -161,4 +165,4 @@ std::vector<MarkdownRender> render_markdown(const std::string& text, std::size_t
   return result;
 }
 
-}  // namespace karta::tui
+} // namespace karta::tui
