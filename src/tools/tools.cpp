@@ -53,8 +53,9 @@ std::string resolve_path(const std::string& input, const std::string& cwd) {
 std::string display_path(const fs::path& path, const std::string& cwd) {
   std::error_code error;
   const fs::path relative = fs::relative(path, cwd, error);
-  if (!error && !relative.empty() && relative.native().rfind("..", 0) != 0) {
-    return relative.generic_string();
+  if (!error && !relative.empty()) {
+    const std::string generic = relative.generic_string();
+    if (generic.rfind("..", 0) != 0) return generic;
   }
   return path.generic_string();
 }
