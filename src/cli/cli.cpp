@@ -173,7 +173,6 @@ void print_help() {
       "  -n, --name <name>              Session display name\n"
       "  -t, --tools <list>             Comma-separated tool allowlist (supports *)\n"
       "  -xt, --exclude-tools <list>    Comma-separated tool denylist\n"
-      "  --mcp <name=command>           Start an MCP stdio server; tools are exposed as mcp__<name>__<tool>\n"
       "  -nt, --no-tools                Disable all tools\n"
       "  -nbt, --no-builtin-tools       Disable built-in tools\n"
       "  --thinking <level>             0 off, 1 default/low, 2 medium, 3 high\n"

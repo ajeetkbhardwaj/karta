@@ -11,10 +11,31 @@ Karta is a terminal-first coding agent that runs in either a rich ncurses TUI or
 - Built-in agent tools including bash, read, write, edit, grep, find, ls, and more
 - Cross-platform build support for Linux, macOS, and Windows
 
+## Install
+
+Prebuilt binaries are published on the [releases page](https://github.com/ajeetkbhardwaj/karta/releases).
+
+Linux/macOS (verifies the release checksum):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ajeetkbhardwaj/karta/main/install.sh | sh
+```
+
+Homebrew:
+
+```bash
+brew tap ajeetkbhardwaj/tap
+brew install karta
+```
+
+Windows: download the release zip, extract `karta.exe`, and add it to `PATH`.
+
+Unix release binaries include the TUI; Linux requires `libncursesw` at runtime.
+
 ## Clone the repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/ajeetkbhardwaj/karta.git
 cd karta
 ```
 

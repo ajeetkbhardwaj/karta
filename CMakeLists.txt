@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(karta LANGUAGES CXX)
+project(karta VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -10,6 +10,14 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 option(KARTA_BUILD_TUI "Build the terminal UI (ncurses)" OFF)
+
+function(karta_enable_warnings target)
+  if(MSVC)
+    target_compile_options(${target} PRIVATE /W4)
+  else()
+    target_compile_options(${target} PRIVATE -Wall -Wextra -Wno-unused-parameter)
+  endif()
+endfunction()
 
 # Categorized subproject sources (canonical). Public headers: include/karta/<category>/.
 add_executable(karta
@@ -29,7 +37,7 @@ add_executable(karta
   # MCP: src/mcp/mcp.cpp, src/mcp/stdio_transport.cpp, src/mcp/http_transport.cpp (TODO: full implementation)
 )
 
-target_compile_options(karta PRIVATE -Wall -Wextra -Wno-unused-parameter)
+karta_enable_warnings(karta)
 target_compile_definitions(karta PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
 # Headers from include/ (karta/...). src/ retained for local/private resolution only.
 target_include_directories(karta PRIVATE
@@ -41,6 +49,9 @@ target_include_directories(karta PRIVATE
 find_package(OpenSSL REQUIRED)
 find_package(Threads REQUIRED)
 target_link_libraries(karta PRIVATE OpenSSL::SSL OpenSSL::Crypto Threads::Threads)
+if(WIN32)
+  target_link_libraries(karta PRIVATE ws2_32)
+endif()
 
 if(APPLE)
   find_library(SECURITY Security)
@@ -104,15 +115,17 @@ if(KARTA_BUILD_TUI)
   )
   message(STATUS "TUI enabled - `karta` opens the terminal UI when attached to a TTY")
 else()
-  message(STATUS "TUI disabled - pass -DKARTA_BUILD_TUI=ON to build the terminal UI")
+  message(STATUS "TUI disabled - pass -DKARTA_BUILD_TUI=ON to build the TUI")
 endif()
 
 install(TARGETS karta RUNTIME DESTINATION bin)
+install(FILES README.md CHANGELOG.md CONTRIBUTING.md LICENSE DESTINATION share/doc/karta)
 
 # Unit tests
 option(KARTA_BUILD_TESTS "Build unit tests" OFF)
 
 if(KARTA_BUILD_TESTS)
+  enable_testing()
   add_executable(karta_tests
     test/unit_tests.cpp
     src/agent/agent.cpp
@@ -129,16 +142,17 @@ if(KARTA_BUILD_TESTS)
     src/tools/tools.cpp
     # MCP: src/mcp/mcp.cpp, src/mcp/stdio_transport.cpp, src/mcp/http_transport.cpp (TODO: full implementation)
   )
-  target_compile_options(karta_tests PRIVATE -Wall -Wextra -Wno-unused-parameter)
+  karta_enable_warnings(karta_tests)
   target_compile_definitions(karta_tests PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
   target_include_directories(karta_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cpp-httplib
   )
-  find_package(OpenSSL REQUIRED)
-  find_package(Threads REQUIRED)
   target_link_libraries(karta_tests PRIVATE OpenSSL::SSL OpenSSL::Crypto Threads::Threads)
+  if(WIN32)
+    target_link_libraries(karta_tests PRIVATE ws2_32)
+  endif()
 
   if(APPLE)
     find_library(SECURITY Security)
@@ -147,5 +161,13 @@ if(KARTA_BUILD_TESTS)
       target_link_libraries(karta_tests PRIVATE ${SECURITY} ${COREFOUNDATION})
     endif()
   endif()
+  add_test(NAME karta_tests COMMAND karta_tests)
   message(STATUS "Unit tests enabled - run with: ctest or ./karta_tests")
 endif()
+
+set(CPACK_PACKAGE_NAME "karta")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_PACKAGE_VENDOR "Karta contributors")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Terminal-first coding agent")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+include(CPack)

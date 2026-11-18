@@ -1,0 +1,113 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.asset }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset: linux-x86_64
+            tui: "ON"
+          - os: macos-13
+            asset: macos-x86_64
+            tui: "ON"
+          - os: macos-14
+            asset: macos-arm64
+            tui: "ON"
+          - os: windows-latest
+            asset: windows-x64
+            tui: "OFF"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libssl-dev libncursesw5-dev cmake g++ pkg-config
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install openssl@3 ncurses cmake pkg-config
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: choco install cmake openssl --no-progress
+
+      - name: Configure
+        shell: bash
+        run: |
+          extra=""
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            extra="-DOPENSSL_ROOT_DIR=$(brew --prefix openssl@3)"
+          fi
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DKARTA_BUILD_TUI=${{ matrix.tui }} \
+            -DKARTA_BUILD_TESTS=ON \
+            $extra
+
+      - name: Build
+        run: cmake --build build --config Release -j4
+
+      - name: Test
+        if: matrix.tui == 'ON'
+        run: ctest --test-dir build --build-config Release --output-on-failure
+
+      - name: Package (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          mkdir -p stage
+          cp build/karta stage/karta
+          tar -C stage -czf "karta-${GITHUB_REF_NAME}-${{ matrix.asset }}.tar.gz" karta
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force stage | Out-Null
+          $binary = Get-ChildItem -Path build -Recurse -Filter karta.exe | Select-Object -First 1
+          if (-not $binary) { throw "karta.exe not found" }
+          Copy-Item $binary.FullName stage/karta.exe
+          Compress-Archive -Path stage/karta.exe -DestinationPath "karta-$env:GITHUB_REF_NAME-${{ matrix.asset }}.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: karta-${{ matrix.asset }}
+          path: karta-*
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Generate checksums
+        working-directory: dist
+        run: sha256sum karta-* > SHA256SUMS
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true

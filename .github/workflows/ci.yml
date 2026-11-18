@@ -55,14 +55,13 @@ jobs:
           choco install cmake openssl pdcurses --no-progress
 
       - name: Configure
-        run: |
-          cmake -S . -B build -DKARTA_BUILD_TUI=${{ matrix.tui }} -DKARTA_BUILD_TESTS=ON
+        run: cmake -S . -B build -DKARTA_BUILD_TUI=${{ matrix.tui }} -DKARTA_BUILD_TESTS=ON
 
       - name: Build
-        run: cmake --build build -j4
+        run: cmake --build build --config Release -j4
 
       - name: Test
-        run: ./build/karta_tests
+        run: ctest --test-dir build --build-config Release --output-on-failure
 
       - name: Upload binary
         uses: actions/upload-artifact@v4
